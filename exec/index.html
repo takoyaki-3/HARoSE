@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8V44SXH5W5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-8V44SXH5W5');
+  </script>
+  <meta charset='utf-8'/>
+  <meta name="viewport" content="width=400px">
+  <title>RAPTOR 経路検索</title>
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.css' rel='stylesheet' />
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+  <style>
+  body { margin:0; padding:0; }
+  #map { position:absolute ; width:100%; height: 75%; }
+  #panel {position: absolute; top:75%;}
+  </style>
+</head>
+<body>
+<div style="height: 50%;">
+  <div id='map'></div>
+</div>
+<div id='app'>
+  <div id='panel'>
+    <!-- <label for="weekday">ダイヤ</label>
+    <input id="weekday" type="text" value="20210909" v-model="timetable">
+    <label for="tenant">対象</label>
+    <input id="tenant" type="text" value="tenant" v-model="tenant_id">
+    <br/>
+    <label>歩行時間の重み</label>
+    <input type="range" v-model="walk" max="5"><input type="text" v-model="walk"><br/>
+    <label>乗り換えの重み</label>
+    <input type="range" v-model="transfer" max="3600"><input type="text" v-model="transfer"><br/>
+    <label>移動距離の重み（x1000）</label>
+    <input type="range" v-model="distance" max="1000"><input type="text" v-model="distance"><br/>
+    <p>所要時間1分=所要時間{{Math.round(walk)}}分<br/>
+      乗換回数1回＝所要時間{{Math.round(transfer/60)}}分<br/>
+      移動距離1km=所要時間{{Math.round(distance/60)}}分</p>
+    <br/>
+    <input type="radio" id="mode_org" value="mode_org" v-model="time_mode">
+    <label for="mode_org">出発時刻指定</label>
+    <input type="radio" id="mode_dst" value="mode_dst" v-model="time_mode">
+    <label for="mode_dst">到着時刻指定</label>
+    <br>
+    <input type="radio" id="stopbase_routing" value="stopbase_routing" v-model="routing_mode">
+    <label for="stopbase_routing">バス停間検索ベース</label>
+    <input type="radio" id="routing" value="routing" v-model="routing_mode">
+    <label for="routing">地点間検索ベース</label>
+    <input type="radio" id="bus_routing" value="bus_routing" v-model="routing_mode">
+    <label for="bus_routing">停留所間検索のみ</label>
+    <br> -->
+    <p>時間：<input v-model="departureTime" placeholder="edit me" type="time"></p>
+
+    <div>
+      <label>出発地 </label><input type="text" v-model="from_text" list="from_list"><br/>
+      <label>目的地 </label><input type="text" v-model="to_text" list="to_list"><br/>
+      <datalist id="from_list">
+        <option v-for="s in from_list" :value="s.stop_name"></option>
+      </datalist>
+      <datalist id="to_list">
+        <option v-for="s in to_list" :value="s.stop_name" ></option>
+      </datalist>
+      <button v-on:click="btn_search_click">検索</button>
+    </div>
+
+    <div>
+      <div v-for="t in legs" v-show="t.type!='walk'&&t.type!='wait'">
+      <!-- <div v-for="t in legs">
+        <p>{{t.type}}</p> -->
+        <div v-if="t.stop_times" style="background-color: #eee;">
+          <h4 v-if="t.stop_times.length > 0">{{t.stop_times[0].departure_time.slice(0,5)}} {{t.stop_times[0].stop_name}}</h4>
+        </div>
+        <div v-if="t.stop_times" style="margin-left:32px;">
+          <p>{{t.vehicle.route_short_name}} {{t.vehicle.trip_headsign}}</p>
+          <p v-for="s,i in t.stop_times.slice(1,-1)" v-show="i==0||i==t.stop_times.length-1||true">
+            {{s.departure_time.slice(0,5)}}　{{s.stop_name}}
+          </p>
+        </div>
+        <div v-if="t.stop_times" style="background-color: #eee;">
+          <h4 v-if="t.stop_times.length > 0">{{t.stop_times[t.stop_times.length-1].departure_time.slice(0,5)}} {{t.stop_times[t.stop_times.length-1].stop_name}}</h4>
+        </div>
+      </div>
+    </div>
+    <p>本アプリケーションが利用する公共交通データは公共交通オープンデータセンターにおいて提供されるもの又はオープンデータとして公開されているものです。公共交通事業者のサイトや各種データプラットフォームにより提供されたデータを基にしていますが、必ずしも正確・完全なものとは限りません。本アプリケーションの表示内容について、公共交通事業者への直接の問合せは行わないでください。本アプリケーションに関するお問い合わせは以下のメールアドレスにお願い致します。</p>
+    <p>mail: <a href="mailto:route-search@takoyaki3.com">route-search@takoyaki3.com</a></p>
+
+    <div>
+      <input type="text" v-model="json">
+      <button v-on:click="run"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+let addFromMarker = false;
+const route = {};
+
+let fromMarker = new mapboxgl.Marker();
+let toMarker = new mapboxgl.Marker();
+let layers = [];
+
+mapboxgl.accessToken = 'pk.eyJ1IjoidGFrb3lha2kzIiwiYSI6ImNrN2p3OTFidzB3MWQzb29hMHlpNDE5bHIifQ.DRmeCz-ABDUgZOT7bqsWOA';
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v9',
+  zoom: 14,
+  center: [139.7639394, 35.6840311]
+});
+
+const vue = new Vue({
+  el:'#app',
+  data:{
+    departureTime:'08:00',
+    legs:[],
+    timetable:'20210909',
+    tenant_id: '',
+    time:1,
+    walk:1,
+    transfer:60,
+    distance:100,
+    from_text:'',
+    to_text:'',
+    from_stop_id:'',
+    to_stop_id:'',
+    from_lonlat:{},
+    to_lonlat:{},
+    from_list:[],
+    to_list:[],
+    time_mode:'mode_org',
+    routing_mode:"routing",
+    json:""
+  },
+  methods:{
+    run:function(e){
+      addRoutingURL('./routing?json='+this.json);
+    },
+    btn_search_click:function(e){
+      this.trips = [];
+      const origin = {};
+      const destination = {};
+      origin.time = HH_MM2Sec(vue.departureTime)
+      destination.time = HH_MM2Sec(vue.departureTime)+3600
+
+      if(vue.from_text=="" || vue.from_text[0]=='('){
+        // origin.stop_id='';
+        origin.lat = vue.from_lonlat.lat;
+        origin.lon = vue.from_lonlat.lon;
+      } else {
+        origin.stop_id=vue.from_text;
+      }
+      if(vue.to_text=="" || vue.to_text[0]=='('){
+        // destination.stop_id='';
+        destination.lat = vue.to_lonlat.lat;
+        destination.lon = vue.to_lonlat.lon;
+      } else {
+        destination.stop_id=vue.to_text;
+      }
+      console.log('from',origin,vue.from_text,"hello")
+      console.log('to',destination,vue.to_text,"hello")
+      addRoutingURL('./routing?json='+JSON.stringify({
+        origin:origin,
+        destination:destination,
+        json_only:true
+      }));
+    },
+    selectedFromStopId:function(s){
+      this.from_stop_id=s.stop_id;
+      route.from = [s.stop_lon,s.stop_lat];
+      addFromMarker = true;
+
+      fromMarker.remove();
+      fromMarker = new mapboxgl.Marker()
+      .setLngLat(route.from)
+      .addTo(map);
+    },
+    selectedToStopId:function(s){
+      this.to_stop_id=s.stop_id;
+      route.to = [s.stop_lon,s.stop_lat];
+      addFromMarker = false;
+
+      toMarker.remove();
+      toMarker = new mapboxgl.Marker()
+      .setLngLat(route.to)
+      .addTo(map);
+
+      this.btn_search_click();
+    }
+  }
+});
+
+map.on('load', function () {
+
+  map.on('click', function(e) {
+    console.log(addFromMarker)
+
+    if (!addFromMarker){
+
+      // marker
+      fromMarker.remove();
+      toMarker.remove();
+
+      vue.trips = [];
+      
+      // From maker
+      vue.from_text = '('+e.lngLat.lat.toFixed(4)+','+e.lngLat.lng.toFixed(4)+')';
+      vue.to_text = '';
+
+      // route
+      for(let i=0;i<layers.length;i++){
+        if (map.getLayer(layers[i])){
+          map.removeLayer(layers[i]);
+        }
+        if (map.getSource(layers[i])){
+          map.removeSource(layers[i]);
+        }
+      }
+      route.from = [e.lngLat.lng, e.lngLat.lat];
+      vue.from_lonlat = {lon:e.lngLat.lng,lat:e.lngLat.lat};
+      vue.from_stop_id='';
+
+      fromMarker.remove();
+      fromMarker = new mapboxgl.Marker()
+      .setLngLat(route.from)
+      .addTo(map);
+      addFromMarker = true;
+    } else {
+
+      vue.to_text = '('+e.lngLat.lat.toFixed(4)+','+e.lngLat.lng.toFixed(4)+')';
+
+      route.to = [e.lngLat.lng, e.lngLat.lat];
+      vue.to_lonlat = {lon:e.lngLat.lng,lat:e.lngLat.lat};
+      vue.to_stop_id='';
+
+      toMarker.remove();
+      toMarker = new mapboxgl.Marker()
+      .setLngLat(route.to)
+      .addTo(map);
+
+      addRouting(route.from, route.to);
+      addFromMarker = false;
+    }
+  });
+});
+
+const HH_MM2Sec = function(hh_mm){
+  const hm = hh_mm.split(':');
+  return (Number(hm[0])*60+Number(hm[1]))*60;
+}
+
+// 経路を検索して経路を描画する
+const addRouting = function(fromPoint, toPoint){
+  vue.legs = [];
+  let fromTime=0,toTime=0;
+  const query = {
+    origin:{
+      lat:fromPoint[1],
+      lon:fromPoint[0]
+    },
+    destination:{
+      lat:toPoint[1],
+      lon:toPoint[0]
+    },
+    json_only:true
+  }
+  if(vue.time_mode=='mode_org') query.origin.time = HH_MM2Sec(vue.departureTime);
+  else query.destination.time = HH_MM2Sec(vue.departureTime);
+  addRoutingURL('./routing?json='+JSON.stringify(query));
+}
+
+const addRoutingURL = function(url){
+  // route
+  for(let i=0;i<layers.length;i++){
+    if (map.getLayer(layers[i])){
+      map.removeLayer(layers[i]);
+    }
+    if (map.getSource(layers[i])){
+      map.removeSource(layers[i]);
+    }
+  }
+  
+  console.log(url);
+
+  fetch(url)
+  .then(function (data) {
+    return data.json();
+  })
+  .then(function (json) {
+    if(!json.trips){
+      return;
+    }
+    vue.legs = json.trips[0].legs;
+    layers = [];
+    const colors = {
+      walk:"#888",
+      bus:"#800",
+      wait:"#000"
+    };
+    console.log(vue.legs)
+    vue.legs.forEach((leg,i) => {
+      console.log('add',leg.geometry)
+      layers.push("route"+i);
+      map.addLayer({
+        "id": "route"+i,
+        "type": "line",
+        "source": {
+          "type": "geojson",
+          "data": leg.geometry
+        },
+        "layout": {
+          "line-join": "round",
+          "line-cap": "round"
+        },
+        "paint": {
+          "line-color": colors['bus'],
+          "line-width": 8
+        }
+      });
+    });
+  });
+}
+
+  </script>
+</body>
+</html>
