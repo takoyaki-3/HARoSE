@@ -19,6 +19,7 @@ import (
 type Conf struct {
 	Dates []string `json:"dates"`
 	Map string `json:"map"`
+	ConnectRange float64 `json:"connect_range"`
 }
 
 func LoadGTFS() (*RAPTORData, *gtfs.GTFS) {
@@ -69,7 +70,7 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS) {
 						Lon: stopJ.Longitude,
 					})	
 				}
-				if dis <= 100 || stopI.Parent == stopJ.Parent {
+				if dis <= conf.ConnectRange || stopI.Parent == stopJ.Parent {
 					raptorData.Transfer[stopI.ID][stopJ.ID] = dis
 				}
 			}
