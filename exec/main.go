@@ -14,9 +14,9 @@ func main() {
 	raptorData, g := loader.LoadGTFS()
 
 	q := &routing.Query{
-		FromTime: 3600 * 4,
+		FromTime: 3600 * 8,
 		FromStop: "0605-01",
-		ToStop:   "0702-01",
+		// ToStop:   "0702-01",
 		// ToStop: "2189-01",
 		MinuteSpeed: 80,
 		Round:       20,
@@ -36,7 +36,7 @@ func main() {
 		StopId2Index[stop.ID] = i
 	}
 
-	numThread := 8
+	numThread := 1
 	fmt.Println("Start routing.")
 	wg := sync.WaitGroup{}
 	wg.Add(numThread)
@@ -50,13 +50,16 @@ func main() {
 				q.FromStop = stop.ID
 				memo := routing.RAPTOR(raptorData, q)
 				notChange := -1
-				for r, _ := range memo.Tau {
+				for r, m := range memo.Tau {
 					if r > 0 {
 						if len(memo.Tau[r-1]) != len(memo.Tau[r]) {
 							notChange = r
 						}
 					}
-					// fmt.Println(r,len(m),len(g.Stops),float64(len(m)*100)/float64((len(g.Stops))))
+					for k,v := range m{
+						fmt.Println(g.Stops[StopId2Index[k]].Name,pkg.Sec2HHMMSS(v.ArrivalTime))
+					}
+					fmt.Println(r,len(m),len(g.Stops),float64(len(m)*100)/float64((len(g.Stops))))
 				}
 				fmt.Println(notChange, float64(len(memo.Tau[q.Round-1])*100)/float64(len(g.Stops)), g.Stops[StopId2Index[stop.ID]].Name)
 			}
