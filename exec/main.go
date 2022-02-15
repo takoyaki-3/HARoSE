@@ -16,20 +16,10 @@ func main() {
 	q := &routing.Query{
 		FromTime: 3600 * 8,
 		FromStop: "0605-01",
-		// ToStop:   "0702-01",
-		// ToStop: "2189-01",
 		MinuteSpeed: 80,
 		Round:       20,
 		LimitTime:   36000,
 	}
-	// for r:=1;r<100;r++{
-	// 	old := time.Now()
-	// 	for i:=0;i<1000;i++{
-	// 		q.Round = r
-	// 		routing.RAPTOR(raptorData,q)
-	// 	}
-	// 	fmt.Println(r,time.Now().Sub(old).Milliseconds())
-	// }
 
 	StopId2Index := map[string]int{}
 	for i, stop := range g.Stops {

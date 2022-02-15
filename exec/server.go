@@ -239,6 +239,37 @@ func main() {
 		}
 		json.DumpToWriter(fc,w)
 	})
+	http.HandleFunc("/routing_surface", func (w http.ResponseWriter, r *http.Request)  {
+
+		var query QueryStr
+		if err := GetRequestData(r, &query); err != nil {
+			log.Fatalln(err)
+		}
+		if query.LimitTime == 0 {
+			query.LimitTime = 3600 * 10
+		}
+		q := &routing.Query{
+			ToStop:      FindODNode(query.Destination, g),
+			FromTime: *query.Origin.Time,
+			FromStop: FindODNode(query.Origin, g),
+			MinuteSpeed: 80,
+			Round:       5,
+			LimitTime:   *query.Origin.Time + query.LimitTime,
+		}
+	
+		StopId2Index := map[string]int{}
+		for i, stop := range g.Stops {
+			StopId2Index[stop.ID] = i
+		}
+	
+		fmt.Println("Start routing.")
+		memo := routing.RAPTOR(raptorData, q)
+		for r, m := range memo.Tau {
+			for k,v := range m{
+				fmt.Println(r,k,g.Stops[StopId2Index[k]].Name,pkg.Sec2HHMMSS(v.ArrivalTime))
+			}
+		}
+	})
 	fmt.Println("start server.")
 	http.ListenAndServe("0.0.0.0:8000", nil)
 }
