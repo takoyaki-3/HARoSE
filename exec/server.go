@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	json "github.com/takoyaki-3/go-json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -44,6 +44,7 @@ type QueryStr struct {
 	Origin      QueryNodeStr `json:"origin"`
 	Destination QueryNodeStr `json:"destination"`
 	IsJSONOnly  bool         `json:"json_only"`
+	LimitTime   int          `json:"limit_time"`
 }
 
 func GetRequestData(r *http.Request, queryStr interface{}) error {
@@ -51,7 +52,7 @@ func GetRequestData(r *http.Request, queryStr interface{}) error {
 	if v == nil {
 		return errors.New("cannot get url query.")
 	}
-	return json.Unmarshal([]byte(v["json"][0]), queryStr)
+	return json.LoadFromString(v["json"][0], &queryStr)
 }
 
 type MTJNodeStr struct {
@@ -101,9 +102,11 @@ func main() {
 	http.HandleFunc("/routing", func(w http.ResponseWriter, r *http.Request) {
 
 		var query QueryStr
-		err := GetRequestData(r, &query)
-		if err != nil {
+		if err := GetRequestData(r, &query); err != nil {
 			log.Fatalln(err)
+		}
+		if query.LimitTime == 0 {
+			query.LimitTime = 3600 * 10
 		}
 
 		// Query
@@ -115,7 +118,7 @@ func main() {
 			FromTime:    *query.Origin.Time,
 			MinuteSpeed: 80,
 			Round:       Round,
-			LimitTime:   *query.Origin.Time + 36000,
+			LimitTime:   *query.Origin.Time + query.LimitTime,
 		}
 		memo := routing.RAPTOR(raptorData, q)
 
@@ -174,21 +177,22 @@ func main() {
 		type Resp struct {
 			Trips []TripStr `json:"trips"`
 		}
-		rawJson, _ := json.Marshal(Resp{
+		json.DumpToWriter(Resp{
 			Trips: []TripStr{
 				TripStr{
 					Legs: legs,
 				},
 			},
-		})
-		w.Write(rawJson)
+		},w)
 	})
 	http.HandleFunc("/routing_geojson", func(w http.ResponseWriter, r *http.Request) {
 
 		var query QueryStr
-		err := GetRequestData(r, &query)
-		if err != nil {
+		if err := GetRequestData(r, &query); err != nil {
 			log.Fatalln(err)
+		}
+		if query.LimitTime == 0 {
+			query.LimitTime = 3600 * 10
 		}
 
 		// Query
@@ -200,7 +204,7 @@ func main() {
 			FromTime:    *query.Origin.Time,
 			MinuteSpeed: 80,
 			Round:       Round,
-			LimitTime:   *query.Origin.Time + 36000,
+			LimitTime:   *query.Origin.Time + query.LimitTime,
 		}
 		memo := routing.RAPTOR(raptorData, q)
 
@@ -233,9 +237,7 @@ func main() {
 				Properties: props,
 			})
 		}
-
-		rawJson, _ := json.Marshal(fc)
-		w.Write(rawJson)
+		json.DumpToWriter(fc,w)
 	})
 	fmt.Println("start server.")
 	http.ListenAndServe("0.0.0.0:8000", nil)

@@ -44,6 +44,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/takoyaki-3/go-gtfs v1.1.22 h1:ENIcX2guvmXKVw4MoRL8Ov8EHLPHvDXs8fvuI0jAz0E=
 github.com/takoyaki-3/go-gtfs v1.1.22/go.mod h1:CnvJfGGYUYiXnOr36VIdiH4csupP1rKZoMgsCvSB/Lk=
+github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb h1:+ho64ruBJraFsn8q8UL6jPhPRQRHrLMikXmcxQ4vszQ=
+github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb/go.mod h1:39fxS11XWIvygjbgeXg4bpyvAxLZ2lr1Cv+9DbbQ9Ew=
 github.com/takoyaki-3/goraph v0.0.1 h1:Jp8bsymRlE9xUjJL9YatgAYHJr8hUOJ1l+l1R43A8x8=
 github.com/takoyaki-3/goraph v0.0.1/go.mod h1:fAjhkvki+n4Op0av3JkRDzmxCGr5tvdYTzRKXO0jpI8=
 github.com/uber/h3-go v3.0.1+incompatible h1:RVpBm8qd7mM94YuIhNQfCXpVj6mPY6gNsVstDg1FvjY=
