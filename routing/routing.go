@@ -3,8 +3,8 @@ package routing
 import (
 	"sort"
 
+	. "github.com/MaaSTechJapan/raptor"
 	"github.com/takoyaki-3/go-gtfs/pkg"
-	. "github.com/takoyaki-3/mapRAPTOR"
 )
 
 type Query struct {
@@ -27,7 +27,7 @@ type Memo struct {
 	Marked []string
 }
 
-func RAPTOR(data *RAPTORData,query *Query)(memo Memo){
+func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 	// Buffer
 	Round := query.Round
@@ -47,24 +47,24 @@ func RAPTOR(data *RAPTORData,query *Query)(memo Memo){
 	}
 	memo.Marked = append(memo.Marked, fromStop)
 
-	for r:=0;r<Round-1;r++{
+	for r := 0; r < Round-1; r++ {
 		newMarked := map[string]bool{}
 
 		// Tau
-		for _,fromStopId:=range memo.Marked{
-			for _,routePatternId := range data.StopRoutes[fromStopId] {
-				for _,trip := range data.StopPatterns[routePatternId].Trips{
+		for _, fromStopId := range memo.Marked {
+			for _, routePatternId := range data.StopRoutes[fromStopId] {
+				for _, trip := range data.StopPatterns[routePatternId].Trips {
 					riding := false
 					// sort.Slice(trip.StopTimes,func(i, j int) bool {
 					// 	return trip.StopTimes[i].Departure < trip.StopTimes[j].Departure
 					// })
-					if pkg.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime{
+					if pkg.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime {
 						continue
 					}
-					for _,stopTime := range trip.StopTimes{
+					for _, stopTime := range trip.StopTimes {
 						if riding {
 							isUpdate := false
-							if v,ok:=memo.Tau[r][stopTime.StopID];ok{
+							if v, ok := memo.Tau[r][stopTime.StopID]; ok {
 								if pkg.HHMMSS2Sec(stopTime.Arrival) < v.ArrivalTime {
 									isUpdate = true
 								}
@@ -74,21 +74,21 @@ func RAPTOR(data *RAPTORData,query *Query)(memo Memo){
 							if isUpdate {
 								memo.Tau[r][stopTime.StopID] = NodeMemo{
 									ArrivalTime: pkg.HHMMSS2Sec(stopTime.Arrival),
-									BeforeStop: fromStopId,
-									BeforeEdge: trip.Properties.TripID,
+									BeforeStop:  fromStopId,
+									BeforeEdge:  trip.Properties.TripID,
 								}
 								newMarked[stopTime.StopID] = true
 							}
 						} else {
-							if stopTime.StopID == fromStopId{
-								if pkg.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r][fromStopId].ArrivalTime{
+							if stopTime.StopID == fromStopId {
+								if pkg.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r][fromStopId].ArrivalTime {
 									break
 								}
 								riding = true
 							}
 						}
 					}
-					if riding{
+					if riding {
 						break
 					}
 				}
@@ -96,15 +96,15 @@ func RAPTOR(data *RAPTORData,query *Query)(memo Memo){
 		}
 
 		// 乗換
-		for _,fromStopId := range memo.Marked{
-			if memo.Tau[r][fromStopId].BeforeEdge == "transfer"{
+		for _, fromStopId := range memo.Marked {
+			if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
 				continue
 			}
-			for toStopId,v := range data.Transfer[fromStopId]{
+			for toStopId, v := range data.Transfer[fromStopId] {
 				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v/80*60)
 				isUpdate := false
-				if m,ok:=memo.Tau[r][toStopId];ok{
-					if m.ArrivalTime > transArrivalTime{
+				if m, ok := memo.Tau[r][toStopId]; ok {
+					if m.ArrivalTime > transArrivalTime {
 						isUpdate = true
 					}
 				} else {
@@ -113,8 +113,8 @@ func RAPTOR(data *RAPTORData,query *Query)(memo Memo){
 				if isUpdate {
 					memo.Tau[r][toStopId] = NodeMemo{
 						ArrivalTime: transArrivalTime,
-						BeforeStop: fromStopId,
-						BeforeEdge: "transfer",
+						BeforeStop:  fromStopId,
+						BeforeEdge:  "transfer",
 					}
 					newMarked[toStopId] = true
 				}
@@ -122,16 +122,16 @@ func RAPTOR(data *RAPTORData,query *Query)(memo Memo){
 		}
 
 		// そのまま待機
-		if r != Round-1{
-			for stopId,n := range memo.Tau[r]{
+		if r != Round-1 {
+			for stopId, n := range memo.Tau[r] {
 				memo.Tau[r+1][stopId] = n
 			}
 		}
 
-		for k,_:=range newMarked {
+		for k, _ := range newMarked {
 			memo.Marked = append(memo.Marked, k)
 		}
-		sort.Slice(memo.Marked,func(i,j int)bool{
+		sort.Slice(memo.Marked, func(i, j int) bool {
 			return memo.Marked[i] < memo.Marked[j]
 		})
 	}

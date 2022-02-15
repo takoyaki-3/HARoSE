@@ -22,9 +22,9 @@ import (
 	// "github.com/takoyaki-3/goraph/geometry/h3"
 	"github.com/takoyaki-3/goraph"
 	// "github.com/takoyaki-3/goraph/search"
+	"github.com/MaaSTechJapan/raptor/loader"
+	"github.com/MaaSTechJapan/raptor/routing"
 	"github.com/takoyaki-3/goraph/geometry"
-	"github.com/takoyaki-3/mapRAPTOR/loader"
-	"github.com/takoyaki-3/mapRAPTOR/routing"
 )
 
 type Geometry struct {
@@ -96,7 +96,7 @@ func main() {
 	}
 
 	mapStops := map[string]int{}
-	for i,s := range g.Stops{
+	for i, s := range g.Stops {
 		mapStops[s.ID] = i
 	}
 
@@ -216,16 +216,16 @@ func main() {
 		fc := FeatureCollection{
 			Type: "FeatureCollection",
 		}
-		for stopId,m := range memo.Tau[ro]{
+		for stopId, m := range memo.Tau[ro] {
 			s := g.Stops[mapStops[stopId]]
 			props := map[string]string{}
-			props["time"] = strconv.Itoa(m.ArrivalTime-q.FromTime)
+			props["time"] = strconv.Itoa(m.ArrivalTime - q.FromTime)
 			props["arrival_time"] = pkg.Sec2HHMMSS(m.ArrivalTime)
 			props["stop_id"] = stopId
 			props["name"] = s.Name
 			tr := ro
-			for tr >= 0{
-				if memo.Tau[tr][stopId].ArrivalTime != m.ArrivalTime{
+			for tr >= 0 {
+				if memo.Tau[tr][stopId].ArrivalTime != m.ArrivalTime {
 					break
 				}
 				tr--
@@ -234,13 +234,13 @@ func main() {
 			fc.Features = append(fc.Features, Feature{
 				Type: "Feature",
 				Geometry: Geometry{
-					Type: "Point",
-					Coordinates: []float64{s.Longitude,s.Latitude},
+					Type:        "Point",
+					Coordinates: []float64{s.Longitude, s.Latitude},
 				},
 				Properties: props,
 			})
 		}
-		
+
 		rawJson, _ := json.Marshal(fc)
 		w.Write(rawJson)
 	})

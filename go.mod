@@ -1,4 +1,4 @@
-module github.com/takoyaki-3/mapRAPTOR
+module github.com/MaaSTechJapan/raptor
 
 go 1.15
 

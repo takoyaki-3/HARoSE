@@ -13,8 +13,8 @@ import (
 	// "github.com/takoyaki-3/goraph"
 	// "github.com/takoyaki-3/goraph/search"
 	// "github.com/takoyaki-3/goraph/geometry"
-	"github.com/takoyaki-3/mapRAPTOR/loader"
-	"github.com/takoyaki-3/mapRAPTOR/routing"
+	"github.com/MaaSTechJapan/raptor/loader"
+	"github.com/MaaSTechJapan/raptor/routing"
 )
 
 func main() {
