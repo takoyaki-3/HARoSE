@@ -11,6 +11,9 @@ import (
 	"github.com/takoyaki-3/go-gtfs/stop_pattern"
 	"github.com/takoyaki-3/go-gtfs/tool"
 	json "github.com/takoyaki-3/go-json"
+	"github.com/takoyaki-3/goraph/loader/osm"
+	"github.com/takoyaki-3/goraph/geometry/h3"
+	"github.com/takoyaki-3/goraph/search"
 )
 
 type Conf struct {
@@ -41,34 +44,36 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS) {
 				if _, ok := raptorData.Transfer[stopI.ID]; !ok {
 					raptorData.Transfer[stopI.ID] = map[string]float64{}
 				}
-				// route := search.Search(road,search.Query{
-				// 	From: h3.Find(road,h3index,goraph.LatLon{
-				// 		Lat: stopI.Latitude,
-				// 		Lon: stopI.Longitude,
-				// 		},9),
-				// 	To: h3.Find(road,h3index,goraph.LatLon{
-				// 		Lat: stopJ.Latitude,
-				// 		Lon: stopJ.Longitude,
-				// 		},9),
-				// 	})
-				// dis := route.Cost
-				dis := geometry.HubenyDistance(goraph.LatLon{
-					Lat: stopI.Latitude,
-					Lon: stopI.Longitude,
-				}, goraph.LatLon{
-					Lat: stopJ.Latitude,
-					Lon: stopJ.Longitude,
-				})
-
+				dis := 0.0
+				if conf.Map != ""{
+					// 地図データ読み込み
+					road := osm.Load("./map.osm.pbf")
+					h3index := h3.MakeH3Index(road,9)
+					route := search.Search(road,search.Query{
+						From: h3.Find(road,h3index,goraph.LatLon{
+							Lat: stopI.Latitude,
+							Lon: stopI.Longitude,
+							},9),
+						To: h3.Find(road,h3index,goraph.LatLon{
+							Lat: stopJ.Latitude,
+							Lon: stopJ.Longitude,
+							},9),
+						})
+					dis = route.Cost
+				} else {
+					dis = geometry.HubenyDistance(goraph.LatLon{
+						Lat: stopI.Latitude,
+						Lon: stopI.Longitude,
+					}, goraph.LatLon{
+						Lat: stopJ.Latitude,
+						Lon: stopJ.Longitude,
+					})	
+				}
 				if dis <= 100 || stopI.Parent == stopJ.Parent {
 					raptorData.Transfer[stopI.ID][stopJ.ID] = dis
 				}
 			}
 		}
-
-		// 地図データ読み込み
-		// road := osm.Load("./map.osm.pbf")
-		// h3index := h3.MakeH3Index(road,9)
 
 		for _, date := range conf.Dates {
 
