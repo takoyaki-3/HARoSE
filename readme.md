@@ -23,6 +23,9 @@ a) 1対1の経路検索をしたい場合
 
 b) 到達圏検索をしたい場合
 
-[http://localhost:8000/routing_geojson?json={"origin":{"lat":35.498816884357325,"lon":139.66437429943267,"time":28800},"destination":{"lat":35.51179352021772,"lon":139.6039574427234},"json_only":true}](http://localhost:8000/routing_geojson?json={"origin":{"lat":35.498816884357325,"lon":139.66437429943267,"time":28800},"destination":{"lat":35.51179352021772,"lon":139.6039574427234},"json_only":true})のようにjsonに出発地と到着地の緯度経度を指定する。
+```
+http://localhost:8000/routing_surface?json={%22origin%22:{%22time%22:28800,%22lat%22:34.38291392395102,%22lon%22:132.4260767353174},%22destination%22:{%22time%22:32400,%22lat%22:34.39101899572567,%22lon%22:132.45094923488853},%22json_only%22:true,%22properties%22:{%22timetable%22:%2220210215%22}}
+```
+のようにjsonに出発地と到着地の緯度経度を指定する。
 
 表示されたGeoJSONを右クリックで保存し、[kepler.gl](https://kepler.gl/demo)にドラックアンドドロップすると可視化される。

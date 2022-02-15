@@ -1,7 +1,6 @@
 package main
 
 import (
-	json "github.com/takoyaki-3/go-json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	json "github.com/takoyaki-3/go-json"
 	"github.com/MaaSTechJapan/raptor/loader"
 	"github.com/MaaSTechJapan/raptor/routing"
 	"github.com/google/uuid"
@@ -95,15 +95,13 @@ func main() {
 	http.HandleFunc("/routing", func(w http.ResponseWriter, r *http.Request) {
 
 		// Query
-		Round := 10
-
 		if q,err := GetQuery(r,g); err != nil {
 			log.Fatalln(err)
 		} else {
 			memo := routing.RAPTOR(raptorData, q)
 
 			pos := q.ToStop
-			ro := Round - 1
+			ro := q.Round - 1
 
 			legs := []MTJLegStr{}
 
@@ -274,7 +272,11 @@ type QueryStr struct {
 	IsJSONOnly  bool         `json:"json_only"`
 	LimitTime   int          `json:"limit_time"`
 	LimitTransfer int        `json:"limit_transfer"`
-	WalkSpeed   float64          `json:"walk_speed"`
+	WalkSpeed   float64      `json:"walk_speed"`
+	Property    QueryProperty `json:"properties"`
+}
+type QueryProperty struct {
+	Timetable string `json:"timetable"`
 }
 func GetRequestData(r *http.Request, queryStr interface{}) error {
 	v := r.URL.Query()
@@ -305,5 +307,6 @@ func GetQuery(r *http.Request,g *gtfs.GTFS)(*routing.Query,error){
 		MinuteSpeed: query.WalkSpeed,
 		Round:       query.LimitTransfer,
 		LimitTime:   *query.Origin.Time + query.LimitTime,
+		Date: 			 query.Property.Timetable,
 	},nil
 }

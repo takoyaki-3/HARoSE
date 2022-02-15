@@ -14,6 +14,7 @@ type Query struct {
 	MinuteSpeed float64
 	Round       int
 	LimitTime   int
+	Date        string
 }
 
 type NodeMemo struct {
@@ -52,8 +53,8 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 		// Tau
 		for _, fromStopId := range memo.Marked {
-			for _, routePatternId := range data.StopRoutes[fromStopId] {
-				for _, trip := range data.StopPatterns[routePatternId].Trips {
+			for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
+				for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
 					riding := false
 					// sort.Slice(trip.StopTimes,func(i, j int) bool {
 					// 	return trip.StopTimes[i].Departure < trip.StopTimes[j].Departure

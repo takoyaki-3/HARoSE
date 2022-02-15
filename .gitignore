@@ -4,3 +4,4 @@
 *.exe
 GTFS*
 !.gitignore
+*.json

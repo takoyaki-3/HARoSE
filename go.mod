@@ -7,6 +7,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/takoyaki-3/go-gtfs v1.1.22
-	github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb // indirect
+	github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb
 	github.com/takoyaki-3/goraph v0.0.1
 )
