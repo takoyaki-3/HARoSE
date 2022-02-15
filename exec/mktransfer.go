@@ -6,7 +6,6 @@ import (
 	"time"
 
 	csvtag "github.com/artonge/go-csv-tag/v2"
-
 	"github.com/takoyaki-3/go-gtfs"
 	"github.com/takoyaki-3/go-gtfs/tool"
 	"github.com/takoyaki-3/goraph"

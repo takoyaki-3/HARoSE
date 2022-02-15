@@ -9,6 +9,3 @@ require (
 	github.com/takoyaki-3/go-gtfs v1.1.22
 	github.com/takoyaki-3/goraph v0.0.1
 )
-
-// replace github.com/takoyaki-3/go-gtfs => C:\Users\hatan\Documents\go-gtfs
-// replace github.com/takoyaki-3/goraph => C:\Users\hatan\Documents\goraph

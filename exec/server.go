@@ -11,19 +11,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
-
-	"github.com/takoyaki-3/go-gtfs"
-	"github.com/takoyaki-3/go-gtfs/pkg"
-
-	// "github.com/takoyaki-3/go-gtfs/stop_pattern"
-
-	// "github.com/takoyaki-3/goraph/loader/osm"
-	// "github.com/takoyaki-3/goraph/geometry/h3"
-	"github.com/takoyaki-3/goraph"
-	// "github.com/takoyaki-3/goraph/search"
 	"github.com/MaaSTechJapan/raptor/loader"
 	"github.com/MaaSTechJapan/raptor/routing"
+	"github.com/google/uuid"
+	"github.com/takoyaki-3/go-gtfs"
+	"github.com/takoyaki-3/go-gtfs/pkg"
+	"github.com/takoyaki-3/goraph"
 	"github.com/takoyaki-3/goraph/geometry"
 )
 

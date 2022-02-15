@@ -4,17 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/takoyaki-3/go-gtfs/pkg"
-
-	// "github.com/takoyaki-3/go-gtfs/stop_pattern"
-
-	// "github.com/takoyaki-3/goraph/loader/osm"
-	// "github.com/takoyaki-3/goraph/geometry/h3"
-	// "github.com/takoyaki-3/goraph"
-	// "github.com/takoyaki-3/goraph/search"
-	// "github.com/takoyaki-3/goraph/geometry"
 	"github.com/MaaSTechJapan/raptor/loader"
 	"github.com/MaaSTechJapan/raptor/routing"
+	"github.com/takoyaki-3/go-gtfs/pkg"
 )
 
 func main() {

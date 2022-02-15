@@ -6,6 +6,6 @@ import (
 
 type RAPTORData struct {
 	StopPatterns []stoppattern.RoutePattern
-	StopRoutes map[string][]int
-	Transfer map[string]map[string]float64
+	StopRoutes   map[string][]int
+	Transfer     map[string]map[string]float64
 }
