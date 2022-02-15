@@ -23,6 +23,7 @@ import (
 type Geometry struct {
 	Type        string      `json:"type"`
 	Coordinates interface{} `json:"coordinates"`
+	Properties map[string]string `json:"properties"`
 }
 type Feature struct {
 	Type       string            `json:"type"`
@@ -32,6 +33,19 @@ type Feature struct {
 type FeatureCollection struct {
 	Type     string    `json:"type"`
 	Features []Feature `json:"features"`
+	Properties map[string]string `json:"properties"`
+}
+func NewFeatureCollection()*FeatureCollection{
+	fc := new(FeatureCollection)
+	fc.Type = "FeatureCollection"
+	return fc
+}
+func NewLineString(coordinates [][]float64,props map[string]string)*Geometry{
+	geom := new(Geometry)
+	geom.Type = "LineString"
+	geom.Coordinates = coordinates
+	geom.Properties = props
+	return geom
 }
 
 type QueryNodeStr struct {
@@ -160,13 +174,10 @@ func main() {
 				Uid:            id,
 				Oid:            id,
 				Created:        time.Now().Format("2006-01-02 15:04:05"),
-				Geometry: Geometry{
-					Type: "LineString",
-					Coordinates: [][]float64{
+				Geometry: *NewLineString([][]float64{
 						[]float64{g.Stops[StopId2Index[bef.BeforeStop]].Longitude, g.Stops[StopId2Index[bef.BeforeStop]].Latitude},
 						[]float64{g.Stops[StopId2Index[now]].Longitude, g.Stops[StopId2Index[now]].Latitude},
-					},
-				},
+					},nil),
 			})
 			ro = ro - 1
 		}
@@ -210,9 +221,7 @@ func main() {
 
 		ro := Round - 1
 
-		fc := FeatureCollection{
-			Type: "FeatureCollection",
-		}
+		fc := NewFeatureCollection()
 		for stopId, m := range memo.Tau[ro] {
 			s := g.Stops[mapStops[stopId]]
 			props := map[string]string{}
@@ -261,14 +270,28 @@ func main() {
 		for i, stop := range g.Stops {
 			StopId2Index[stop.ID] = i
 		}
+
+		fc := NewFeatureCollection()
 	
-		fmt.Println("Start routing.")
 		memo := routing.RAPTOR(raptorData, q)
 		for r, m := range memo.Tau {
 			for k,v := range m{
-				fmt.Println(r,k,g.Stops[StopId2Index[k]].Name,pkg.Sec2HHMMSS(v.ArrivalTime))
+				props:=map[string]string{}
+				props["stop_id"] = k
+				props["arrival_time"] = pkg.Sec2HHMMSS(v.ArrivalTime)
+				props["stop_name"] = g.Stops[StopId2Index[k]].Name
+				props["round"] = strconv.Itoa(r)
+				fc.Features = append(fc.Features, Feature{
+					Type: "Feature",
+					Geometry: Geometry{
+						Type: "Point",
+						Coordinates: []float64{g.Stops[StopId2Index[k]].Longitude,g.Stops[StopId2Index[k]].Latitude},
+					},
+					Properties: props,
+				})
 			}
 		}
+		json.DumpToWriter(fc,w)
 	})
 	fmt.Println("start server.")
 	http.ListenAndServe("0.0.0.0:8000", nil)
