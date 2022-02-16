@@ -1,7 +1,6 @@
 package loader
 
 import (
-	"fmt"
 	"time"
 
 	. "github.com/MaaSTechJapan/raptor"
