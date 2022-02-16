@@ -54,7 +54,22 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 		if conf.Map.FileName != ""{
 			// 地図データ読み込み
 			road = osm.Load(conf.Map.FileName)
-				// 緯度経度で切り取り
+			// 緯度経度で切り取り
+			if conf.Map.MaxLat == 0 {
+				conf.Map.MaxLat = 90
+			}
+			if conf.Map.MaxLon == 0 {
+				conf.Map.MaxLon = 180
+			}
+			if conf.Map.MinLat == 0{
+				conf.Map.MinLat = -90
+			}
+			if conf.Map.MinLon == 0{
+				conf.Map.MinLon = -180
+			}
+			if conf.NumThread == 0{
+				conf.NumThread = 1
+			}
 			if err := goraphtool.CutGoraph(&road, goraph.LatLon{
 				Lat: conf.Map.MaxLat,
 				Lon: conf.Map.MinLon,
