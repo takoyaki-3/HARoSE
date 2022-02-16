@@ -75,7 +75,10 @@ type MTJLegStr struct {
 
 func main() {
 
-	raptorData, g := loader.LoadGTFS()
+	raptorData, g, err := loader.LoadGTFS()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	StopId2Index := map[string]int{}
 	for i, stop := range g.Stops {

@@ -268,7 +268,10 @@ const addRouting = function(fromPoint, toPoint){
       lat:toPoint[1],
       lon:toPoint[0]
     },
-    json_only:true
+    json_only:true,
+    properties:{
+      timetable:"20210215"
+    }
   }
   if(vue.time_mode=='mode_org') query.origin.time = HH_MM2Sec(vue.departureTime);
   else query.destination.time = HH_MM2Sec(vue.departureTime);

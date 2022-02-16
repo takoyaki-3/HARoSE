@@ -9,4 +9,5 @@ require (
 	github.com/takoyaki-3/go-gtfs v1.1.22
 	github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb
 	github.com/takoyaki-3/goraph v0.0.1
+	github.com/uber/h3-go v3.0.1+incompatible
 )
