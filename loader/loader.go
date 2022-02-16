@@ -15,24 +15,24 @@ import (
 	"github.com/takoyaki-3/goraph/geometry/h3"
 	"github.com/takoyaki-3/goraph/loader/osm"
 	"github.com/takoyaki-3/goraph/search"
-	uh3 "github.com/uber/h3-go"
 	goraphtool "github.com/takoyaki-3/goraph/tool"
+	uh3 "github.com/uber/h3-go"
 )
 
 type ConfMap struct {
-	MaxLat float64 `json:"max_lat"`
-	MaxLon float64 `json:"max_lon"`
-	MinLat float64 `json:"min_lat"`
-	MinLon float64 `json:"min_lon"`
-	FileName string `json:"file_name"`
+	MaxLat   float64 `json:"max_lat"`
+	MaxLon   float64 `json:"max_lon"`
+	MinLat   float64 `json:"min_lat"`
+	MinLon   float64 `json:"min_lon"`
+	FileName string  `json:"file_name"`
 }
 
 type Conf struct {
-	StartDate string `json:"start_date"`
-	EndDate string `json:"end_date"`
-	Map ConfMap `json:"map"`
+	StartDate    string  `json:"start_date"`
+	EndDate      string  `json:"end_date"`
+	Map          ConfMap `json:"map"`
 	ConnectRange float64 `json:"connect_range"`
-	NumThread int `json:"num_threads"`
+	NumThread    int     `json:"num_threads"`
 }
 
 func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
@@ -42,16 +42,16 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 	raptorData.TimeTables = map[string]TimeTable{}
 
 	var conf Conf
-	if err := json.LoadFromPath("./conf.json",&conf);err != nil{
+	if err := json.LoadFromPath("./conf.json", &conf); err != nil {
 		return &RAPTORData{}, &gtfs.GTFS{}, err
 	}
 
-	if g, err := gtfs.Load("./GTFS", nil);err != nil {
+	if g, err := gtfs.Load("./GTFS", nil); err != nil {
 		return &RAPTORData{}, &gtfs.GTFS{}, err
 	} else {
 		var road goraph.Graph
 		var h3index map[uh3.H3Index][]int64
-		if conf.Map.FileName != ""{
+		if conf.Map.FileName != "" {
 			// 地図データ読み込み
 			road = osm.Load(conf.Map.FileName)
 			// 緯度経度で切り取り
@@ -61,13 +61,13 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 			if conf.Map.MaxLon == 0 {
 				conf.Map.MaxLon = 180
 			}
-			if conf.Map.MinLat == 0{
+			if conf.Map.MinLat == 0 {
 				conf.Map.MinLat = -90
 			}
-			if conf.Map.MinLon == 0{
+			if conf.Map.MinLon == 0 {
 				conf.Map.MinLon = -180
 			}
-			if conf.NumThread == 0{
+			if conf.NumThread == 0 {
 				conf.NumThread = 1
 			}
 			if err := goraphtool.CutGoraph(&road, goraph.LatLon{
@@ -76,25 +76,25 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 			}, goraph.LatLon{
 				Lat: conf.Map.MinLat,
 				Lon: conf.Map.MaxLon,
-			}); err != nil{
+			}); err != nil {
 				return &RAPTORData{}, &gtfs.GTFS{}, err
 			}
-			h3index = h3.MakeH3Index(road,9)
+			h3index = h3.MakeH3Index(road, 9)
 		}
 		wg := sync.WaitGroup{}
 		wg.Add(conf.NumThread)
 		type Dis struct {
 			fromId string
-			toId string
-			dis float64
+			toId   string
+			dis    float64
 		}
-		diss := make([][]Dis,conf.NumThread)
-		for rank:=0;rank<conf.NumThread;rank++{
-			go func(rank int){
+		diss := make([][]Dis, conf.NumThread)
+		for rank := 0; rank < conf.NumThread; rank++ {
+			go func(rank int) {
 				defer wg.Done()
 				for i, stopI := range g.Stops {
 					for j, stopJ := range g.Stops {
-						if (i+j) % conf.NumThread != rank{
+						if (i+j)%conf.NumThread != rank {
 							continue
 						}
 						if i <= j {
@@ -109,31 +109,31 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 						})
 						if dis <= conf.ConnectRange && conf.Map.FileName != "" {
 							// 道のりも計算
-							route := search.Search(road,search.Query{
-								From: h3.Find(road,h3index,goraph.LatLon{
+							route := search.Search(road, search.Query{
+								From: h3.Find(road, h3index, goraph.LatLon{
 									Lat: stopI.Latitude,
 									Lon: stopI.Longitude,
-									},9),
-								To: h3.Find(road,h3index,goraph.LatLon{
+								}, 9),
+								To: h3.Find(road, h3index, goraph.LatLon{
 									Lat: stopJ.Latitude,
 									Lon: stopJ.Longitude,
-									},9),
-								})
+								}, 9),
+							})
 							dis = route.Cost
 						}
 						if dis <= conf.ConnectRange || stopI.Parent == stopJ.Parent {
-							diss[rank] = append(diss[rank],Dis{
+							diss[rank] = append(diss[rank], Dis{
 								fromId: stopI.ID,
-								toId: stopJ.ID,
-								dis: dis})
+								toId:   stopJ.ID,
+								dis:    dis})
 						}
 					}
 				}
 			}(rank)
 		}
 		wg.Wait()
-		for _,arr := range diss{
-			for _,v:=range arr{
+		for _, arr := range diss {
+			for _, v := range arr {
 				if _, ok := raptorData.Transfer[v.fromId]; !ok {
 					raptorData.Transfer[v.fromId] = map[string]float64{}
 				}
@@ -145,7 +145,7 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 			}
 		}
 
-		if date,err := time.Parse("20060102",conf.StartDate);err != nil {
+		if date, err := time.Parse("20060102", conf.StartDate); err != nil {
 			return &RAPTORData{}, &gtfs.GTFS{}, err
 		} else {
 			for {

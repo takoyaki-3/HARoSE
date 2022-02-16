@@ -10,15 +10,15 @@ import (
 	"strconv"
 	"time"
 
-	json "github.com/takoyaki-3/go-json"
 	"github.com/MaaSTechJapan/raptor/loader"
 	"github.com/MaaSTechJapan/raptor/routing"
 	"github.com/google/uuid"
+	. "github.com/takoyaki-3/go-geojson"
 	"github.com/takoyaki-3/go-gtfs"
 	"github.com/takoyaki-3/go-gtfs/pkg"
+	json "github.com/takoyaki-3/go-json"
 	"github.com/takoyaki-3/goraph"
 	"github.com/takoyaki-3/goraph/geometry"
-	. "github.com/takoyaki-3/go-geojson"
 )
 
 type MTJNodeStr struct {
@@ -71,7 +71,7 @@ func main() {
 	http.HandleFunc("/routing", func(w http.ResponseWriter, r *http.Request) {
 
 		// Query
-		if q,err := GetQuery(r,g); err != nil {
+		if q, err := GetQuery(r, g); err != nil {
 			log.Fatalln(err)
 		} else {
 			memo := routing.RAPTOR(raptorData, q)
@@ -115,9 +115,9 @@ func main() {
 					Oid:            id,
 					Created:        time.Now().Format("2006-01-02 15:04:05"),
 					Geometry: *NewLineString([][]float64{
-							[]float64{g.Stops[StopId2Index[bef.BeforeStop]].Longitude, g.Stops[StopId2Index[bef.BeforeStop]].Latitude},
-							[]float64{g.Stops[StopId2Index[now]].Longitude, g.Stops[StopId2Index[now]].Latitude},
-						},nil),
+						[]float64{g.Stops[StopId2Index[bef.BeforeStop]].Longitude, g.Stops[StopId2Index[bef.BeforeStop]].Latitude},
+						[]float64{g.Stops[StopId2Index[now]].Longitude, g.Stops[StopId2Index[now]].Latitude},
+					}, nil),
 				})
 				ro = ro - 1
 			}
@@ -134,12 +134,12 @@ func main() {
 						Legs: legs,
 					},
 				},
-			},w)
+			}, w)
 		}
 	})
 	http.HandleFunc("/routing_geojson", func(w http.ResponseWriter, r *http.Request) {
 
-		if q,err := GetQuery(r,g); err != nil {
+		if q, err := GetQuery(r, g); err != nil {
 			log.Fatalln(err)
 		} else {
 			// Query
@@ -174,25 +174,25 @@ func main() {
 					Properties: props,
 				})
 			}
-			json.DumpToWriter(fc,w)
+			json.DumpToWriter(fc, w)
 		}
 	})
-	http.HandleFunc("/routing_surface", func (w http.ResponseWriter, r *http.Request)  {
+	http.HandleFunc("/routing_surface", func(w http.ResponseWriter, r *http.Request) {
 
-		if q,err := GetQuery(r,g); err != nil {
+		if q, err := GetQuery(r, g); err != nil {
 			log.Fatalln(err)
 		} else {
 			StopId2Index := map[string]int{}
 			for i, stop := range g.Stops {
 				StopId2Index[stop.ID] = i
 			}
-	
+
 			fc := NewFeatureCollection()
-		
+
 			memo := routing.RAPTOR(raptorData, q)
 			for r, m := range memo.Tau {
-				for k,v := range m{
-					props:=map[string]string{}
+				for k, v := range m {
+					props := map[string]string{}
 					props["stop_id"] = k
 					props["arrival_time"] = pkg.Sec2HHMMSS(v.ArrivalTime)
 					props["stop_name"] = g.Stops[StopId2Index[k]].Name
@@ -200,14 +200,14 @@ func main() {
 					fc.Features = append(fc.Features, Feature{
 						Type: "Feature",
 						Geometry: Geometry{
-							Type: "Point",
-							Coordinates: []float64{g.Stops[StopId2Index[k]].Longitude,g.Stops[StopId2Index[k]].Latitude},
+							Type:        "Point",
+							Coordinates: []float64{g.Stops[StopId2Index[k]].Longitude, g.Stops[StopId2Index[k]].Latitude},
 						},
 						Properties: props,
 					})
 				}
 			}
-			json.DumpToWriter(fc,w)
+			json.DumpToWriter(fc, w)
 		}
 	})
 	fmt.Println("start server.")
@@ -243,17 +243,18 @@ type QueryNodeStr struct {
 	Time   *int     `json:"time"`
 }
 type QueryStr struct {
-	Origin      QueryNodeStr `json:"origin"`
-	Destination QueryNodeStr `json:"destination"`
-	IsJSONOnly  bool         `json:"json_only"`
-	LimitTime   int          `json:"limit_time"`
-	LimitTransfer int        `json:"limit_transfer"`
-	WalkSpeed   float64      `json:"walk_speed"`
-	Property    QueryProperty `json:"properties"`
+	Origin        QueryNodeStr  `json:"origin"`
+	Destination   QueryNodeStr  `json:"destination"`
+	IsJSONOnly    bool          `json:"json_only"`
+	LimitTime     int           `json:"limit_time"`
+	LimitTransfer int           `json:"limit_transfer"`
+	WalkSpeed     float64       `json:"walk_speed"`
+	Property      QueryProperty `json:"properties"`
 }
 type QueryProperty struct {
 	Timetable string `json:"timetable"`
 }
+
 func GetRequestData(r *http.Request, queryStr interface{}) error {
 	v := r.URL.Query()
 	if v == nil {
@@ -261,10 +262,10 @@ func GetRequestData(r *http.Request, queryStr interface{}) error {
 	}
 	return json.LoadFromString(v["json"][0], &queryStr)
 }
-func GetQuery(r *http.Request,g *gtfs.GTFS)(*routing.Query,error){
+func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 	var query QueryStr
 	if err := GetRequestData(r, &query); err != nil {
-		return &routing.Query{},err
+		return &routing.Query{}, err
 	}
 	if query.LimitTime == 0 {
 		query.LimitTime = 3600 * 10
@@ -283,6 +284,6 @@ func GetQuery(r *http.Request,g *gtfs.GTFS)(*routing.Query,error){
 		MinuteSpeed: query.WalkSpeed,
 		Round:       query.LimitTransfer,
 		LimitTime:   *query.Origin.Time + query.LimitTime,
-		Date: 			 query.Property.Timetable,
-	},nil
+		Date:        query.Property.Timetable,
+	}, nil
 }
