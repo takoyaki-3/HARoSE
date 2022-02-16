@@ -245,7 +245,6 @@ type QueryNodeStr struct {
 type QueryStr struct {
 	Origin        QueryNodeStr  `json:"origin"`
 	Destination   QueryNodeStr  `json:"destination"`
-	IsJSONOnly    bool          `json:"json_only"`
 	LimitTime     int           `json:"limit_time"`
 	LimitTransfer int           `json:"limit_transfer"`
 	WalkSpeed     float64       `json:"walk_speed"`
