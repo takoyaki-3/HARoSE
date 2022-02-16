@@ -211,7 +211,9 @@ func main() {
 		}
 	})
 	fmt.Println("start server.")
-	http.ListenAndServe("0.0.0.0:8000", nil)
+	if err := http.ListenAndServe("0.0.0.0:8000", nil);err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func FindODNode(qns QueryNodeStr, g *gtfs.GTFS) string {

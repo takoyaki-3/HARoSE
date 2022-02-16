@@ -1,14 +1,15 @@
 package loader
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/takoyaki-3/goraph"
 	. "github.com/MaaSTechJapan/raptor"
 	"github.com/takoyaki-3/go-gtfs"
 	"github.com/takoyaki-3/go-gtfs/stop_pattern"
 	"github.com/takoyaki-3/go-gtfs/tool"
 	json "github.com/takoyaki-3/go-json"
+	"github.com/takoyaki-3/goraph"
 	"github.com/takoyaki-3/goraph/loader/osm"
 	goraphtool "github.com/takoyaki-3/goraph/tool"
 )
@@ -67,6 +68,9 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				}
 				if conf.WalkingSpeed == 0{
 					conf.WalkingSpeed = 80
+				}
+				if conf.ConnectRange == 0{
+					conf.ConnectRange = 100
 				}
 				if err := goraphtool.CutGoraph(&road, goraph.LatLon{
 					Lat: conf.Map.MaxLat,

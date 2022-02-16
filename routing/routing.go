@@ -31,11 +31,10 @@ type Memo struct {
 func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 	// Buffer
-	Round := query.Round
 	fromStop := query.FromStop
 	fromTime := query.FromTime
 
-	memo.Tau = make([]map[string]NodeMemo, Round)
+	memo.Tau = make([]map[string]NodeMemo, query.Round)
 	for k, _ := range memo.Tau {
 		memo.Tau[k] = map[string]NodeMemo{}
 	}
@@ -48,7 +47,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	}
 	memo.Marked = append(memo.Marked, fromStop)
 
-	for r := 0; r < Round-1; r++ {
+	for r := 0; r < query.Round-1; r++ {
 		newMarked := map[string]bool{}
 
 		// Tau
@@ -123,7 +122,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		}
 
 		// そのまま待機
-		if r != Round-1 {
+		if r != query.Round-1 {
 			for stopId, n := range memo.Tau[r] {
 				memo.Tau[r+1][stopId] = n
 			}
