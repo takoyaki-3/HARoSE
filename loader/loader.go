@@ -19,7 +19,8 @@ import (
 )
 
 type Conf struct {
-	Dates []string `json:"dates"`
+	StartDate string `json:"start_date"`
+	EndDate string `json:"end_date"`
 	Map string `json:"map"`
 	ConnectRange float64 `json:"connect_range"`
 	NumThread int `json:"num_threads"`
@@ -110,13 +111,12 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 			}
 		}
 
-		for _, date := range conf.Dates {
-
-			// 日付をベースとした絞り込み
-			if t,err := time.Parse("20060102",date);err!=nil{
-				return &RAPTORData{}, &gtfs.GTFS{}, err
-			} else {
-				dateG := tool.ExtractByDate(g, t)
+		if date,err := time.Parse("20060102",conf.StartDate);err != nil {
+			return &RAPTORData{}, &gtfs.GTFS{}, err
+		} else {
+			for {
+				// 日付をベースとした絞り込み
+				dateG := tool.ExtractByDate(g, date)
 
 				// 停車パターンの取得
 				routePatterns := stoppattern.GetRoutePatterns(dateG)
@@ -130,9 +130,13 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 					}
 				}
 
-				raptorData.TimeTables[date] = TimeTable{
+				dateStr := date.Format("20060102")
+				raptorData.TimeTables[dateStr] = TimeTable{
 					StopPatterns: routePatterns,
 					StopRoutes:   stopRoutes,
+				}
+				if dateStr == conf.EndDate {
+					break
 				}
 			}
 		}
