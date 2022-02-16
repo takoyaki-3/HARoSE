@@ -65,6 +65,9 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				if conf.NumThread == 0 {
 					conf.NumThread = 1
 				}
+				if conf.WalkingSpeed == 0{
+					conf.WalkingSpeed = 80
+				}
 				if err := goraphtool.CutGoraph(&road, goraph.LatLon{
 					Lat: conf.Map.MaxLat,
 					Lon: conf.Map.MinLon,
