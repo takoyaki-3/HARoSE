@@ -1,0 +1,12 @@
+version: '3'
+services:
+
+  api:
+    image: golang:1.15
+    container_name: api
+    ports:
+      - 8000:8000
+    volumes:
+      - ./:/worker
+    working_dir: /worker/exec
+    command: go run server.go
