@@ -16,12 +16,21 @@ import (
 	"github.com/takoyaki-3/goraph/loader/osm"
 	"github.com/takoyaki-3/goraph/search"
 	uh3 "github.com/uber/h3-go"
+	goraphtool "github.com/takoyaki-3/goraph/tool"
 )
+
+type ConfMap struct {
+	MaxLat float64 `json:"max_lat"`
+	MaxLon float64 `json:"max_lon"`
+	MinLat float64 `json:"min_lat"`
+	MinLon float64 `json:"min_lon"`
+	FileName string `json:"file_name"`
+}
 
 type Conf struct {
 	StartDate string `json:"start_date"`
 	EndDate string `json:"end_date"`
-	Map string `json:"map"`
+	Map ConfMap `json:"map"`
 	ConnectRange float64 `json:"connect_range"`
 	NumThread int `json:"num_threads"`
 }
@@ -42,9 +51,19 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 	} else {
 		var road goraph.Graph
 		var h3index map[uh3.H3Index][]int64
-		if conf.Map != ""{
+		if conf.Map.FileName != ""{
 			// 地図データ読み込み
-			road = osm.Load(conf.Map)
+			road = osm.Load(conf.Map.FileName)
+				// 緯度経度で切り取り
+			if err := goraphtool.CutGoraph(&road, goraph.LatLon{
+				Lat: conf.Map.MaxLat,
+				Lon: conf.Map.MinLon,
+			}, goraph.LatLon{
+				Lat: conf.Map.MinLat,
+				Lon: conf.Map.MaxLon,
+			}); err != nil{
+				return &RAPTORData{}, &gtfs.GTFS{}, err
+			}
 			h3index = h3.MakeH3Index(road,9)
 		}
 		wg := sync.WaitGroup{}
@@ -73,7 +92,7 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 							Lat: stopJ.Latitude,
 							Lon: stopJ.Longitude,
 						})
-						if dis <= conf.ConnectRange && conf.Map != "" {
+						if dis <= conf.ConnectRange && conf.Map.FileName != "" {
 							// 道のりも計算
 							route := search.Search(road,search.Query{
 								From: h3.Find(road,h3index,goraph.LatLon{
