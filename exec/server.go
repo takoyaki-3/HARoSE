@@ -102,7 +102,7 @@ func main() {
 						}
 					}
 
-					legs = append(legs, models.LegStr{
+					legs = append([]models.LegStr{models.LegStr{
 						Type: "bus",
 						Trip: models.GTFSTripStr{
 							TripId:          trip.ID,
@@ -122,7 +122,7 @@ func main() {
 						Costs: models.CostStr{
 							Fare: &p.Price,
 						},
-					})
+					}},legs...)
 				}
 				ro = ro - 1
 			}
