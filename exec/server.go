@@ -15,44 +15,11 @@ import (
 	. "github.com/takoyaki-3/go-geojson"
 	"github.com/takoyaki-3/go-gtfs"
 	"github.com/takoyaki-3/go-gtfs/pkg"
+	"github.com/takoyaki-3/go-gtfs/tool"
 	json "github.com/takoyaki-3/go-json"
 	"github.com/takoyaki-3/goraph"
 	"github.com/takoyaki-3/goraph/geometry"
 )
-
-type MTJNodeStr struct {
-	Id    string  `json:"id"`
-	Lat   float64 `json:"lat"`
-	Lon   float64 `json:"lon"`
-	Title string  `json:"title"`
-	ArrivalTime string `json:"arrival_time"`
-	DepartureTime string `json:"departure_time"`
-}
-type MTJLegStr struct {
-	Id             string     `json:"id"`
-	Uid            string     `json:"uid"`
-	Oid            string     `json:"oid"`
-	Title          string     `json:"title"`
-	Created        string     `json:"created"`
-	Issued         string     `json:"issued"`
-	Available      string     `json:"available"`
-	Valid          string     `json:"valid"`
-	Type           string     `json:"type"`
-	SubType        string     `json:"subtype"`
-	FromNode       MTJNodeStr `json:"from_node"`
-	ToNode         MTJNodeStr `json:"to_node"`
-	ViaStops			 []MTJNodeStr `json:"stop_times"`
-	Transportation string     `json:"transportation"`
-	load           string     `json:"load"`
-	WKT            string     `json:WKT`
-	Geometry       Geometry   `json:"geometry"`
-}
-type MTJTripStr struct {
-	Legs []MTJLegStr `json:"legs"`
-}
-type MTJResp struct {
-	Trips []MTJTripStr `json:"trips"`
-}
 
 func main() {
 
@@ -96,37 +63,55 @@ func main() {
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
 
+				latlons := [][]float64{}
+
 				for _,v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes{
 					if v.StopID == bef.BeforeStop {
 						on = true
 					}
 					if on {
 						stopId := v.StopID
+						s := g.Stops[raptorData.StopId2Index[stopId]]
 						viaNodes = append(viaNodes, models.StopTimeStr{
 							StopId:    string(stopId),
-							StopLat:   g.Stops[raptorData.StopId2Index[stopId]].Latitude,
-							StopLon:   g.Stops[raptorData.StopId2Index[stopId]].Longitude,
-							StopName: g.Stops[raptorData.StopId2Index[stopId]].Name,
+							StopLat:   s.Latitude,
+							StopLon:   s.Longitude,
+							StopName: 	s.Name,
 							ArrivalTime: v.Arrival,
 							DepartureTime: v.Departure,
 						})
+						latlons = append(latlons, []float64{s.Longitude,s.Latitude})
 					}
 					if v.StopID == now{
 						break
 					}
 				}
 
+				// trip情報の取得
+				trip := tool.GetTrip(g,string(memo.Tau[ro][now].BeforeEdge))
+				route := tool.GetRoute(g,trip.RouteID)
+				headSign := ""
+				if len(viaNodes) > 0{
+					headSign = tool.GetHeadSign(g,trip.ID,viaNodes[0].StopId)
+				}
+
 				legs = append(legs, models.LegStr{
 					Type: "bus",
 					Trip:			 models.GTFSTripStr{
-						TripId: string(memo.Tau[ro][now].BeforeEdge),
+						TripId: trip.ID,
+						TripDescription: trip.DirectionID,
+						RouteLongName: route.LongName,
+						ServiceId: trip.ServiceID,
+						TripType: strconv.Itoa(route.Type),
+						RouteColor: route.Color,
+						RouteTextColor: route.TextColor,
+						RouteShortName: route.ShortName,
+						TripHeadSign: headSign,
+						RouteId: trip.RouteID,
 					},
 					StopTimes: viaNodes,
 					TimeEdges: []models.TimeEdgeStr{},
-					Geometry: NewLineString([][]float64{
-						[]float64{g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Longitude, g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Latitude},
-						[]float64{g.Stops[raptorData.StopId2Index[now]].Longitude, g.Stops[raptorData.StopId2Index[now]].Latitude},
-					}, nil),
+					Geometry: NewLineString(latlons, nil),
 				})
 				ro = ro - 1
 			}
@@ -138,46 +123,6 @@ func main() {
 					},
 				},
 			}, w)
-		}
-	})
-	http.HandleFunc("/routing_geojson", func(w http.ResponseWriter, r *http.Request) {
-
-		if q, err := GetQuery(r, g); err != nil {
-			log.Fatalln(err)
-		} else {
-			// Query
-			Round := 10
-
-			memo := routing.RAPTOR(raptorData, q)
-
-			ro := Round - 1
-
-			fc := NewFeatureCollection()
-			for stopId, m := range memo.Tau[ro] {
-				s := g.Stops[raptorData.StopId2Index[stopId]]
-				props := map[string]string{}
-				props["time"] = strconv.Itoa(m.ArrivalTime - q.FromTime)
-				props["arrival_time"] = pkg.Sec2HHMMSS(m.ArrivalTime)
-				props["stop_id"] = stopId
-				props["name"] = s.Name
-				tr := ro
-				for tr >= 0 {
-					if memo.Tau[tr][stopId].ArrivalTime != m.ArrivalTime {
-						break
-					}
-					tr--
-				}
-				props["transfer"] = strconv.Itoa(tr)
-				fc.Features = append(fc.Features, Feature{
-					Type: "Feature",
-					Geometry: Geometry{
-						Type:        "Point",
-						Coordinates: []float64{s.Longitude, s.Latitude},
-					},
-					Properties: props,
-				})
-			}
-			json.DumpToWriter(fc, w)
 		}
 	})
 	http.HandleFunc("/routing_surface", func(w http.ResponseWriter, r *http.Request) {
@@ -280,8 +225,6 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 	if query.WalkSpeed == 0 {
 		query.WalkSpeed = 80
 	}
-
-	fmt.Println(query.Origin,query.Destination)
 
 	return &routing.Query{
 		ToStop:      FindODNode(query.Destination, g),

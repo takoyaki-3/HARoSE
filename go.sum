@@ -17,8 +17,6 @@ github.com/golang/protobuf v1.5.2 h1:ROPKBNFfQgOUMifHyP+KYbvpjbdoFNs+aK7DXlji0Tw
 github.com/golang/protobuf v1.5.2/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=
 github.com/google/go-cmp v0.5.5 h1:Khx7svrCpmxxtHBq5j2mp/xVjsi8hQMfNLvJFAlrGgU=
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
-github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
-github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/kisielk/errcheck v1.5.0 h1:e8esj/e4R+SAOwFwN+n3zr0nYeCyeweozKfO23MvHzY=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0 h1:AV2c/EiW3KqPNT9ZKl07ehoAGi4C5/01Cfbblndcapg=
@@ -44,14 +42,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/takoyaki-3/go-geojson v0.0.1 h1:uRo5mszCqPUYaQ3CpJk4q86WA7ZjaFzJ+3it3caHoNM=
 github.com/takoyaki-3/go-geojson v0.0.1/go.mod h1:0Yd9ZVbTx+59M//yuOl7FrTTcN8dgx3JSXevt4Nxatg=
-github.com/takoyaki-3/go-gtfs v1.1.22 h1:ENIcX2guvmXKVw4MoRL8Ov8EHLPHvDXs8fvuI0jAz0E=
-github.com/takoyaki-3/go-gtfs v1.1.22/go.mod h1:CnvJfGGYUYiXnOr36VIdiH4csupP1rKZoMgsCvSB/Lk=
-github.com/takoyaki-3/go-gtfs v1.1.24 h1:bRaLU8iQJk9YELx8qW6+LVw36nEasly8PAwMOPjZzjg=
-github.com/takoyaki-3/go-gtfs v1.1.24/go.mod h1:CnvJfGGYUYiXnOr36VIdiH4csupP1rKZoMgsCvSB/Lk=
-github.com/takoyaki-3/go-gtfs v1.1.25 h1:5JZO04To/ttDU6eoJ7pRFPqZU7kP/E8P6O+Q5aEjnH0=
-github.com/takoyaki-3/go-gtfs v1.1.25/go.mod h1:CnvJfGGYUYiXnOr36VIdiH4csupP1rKZoMgsCvSB/Lk=
-github.com/takoyaki-3/go-gtfs v1.1.26 h1:lhBAvGq2lVu83ucTzgiupF/wII3x4Wz24P+5+nELKYY=
-github.com/takoyaki-3/go-gtfs v1.1.26/go.mod h1:CnvJfGGYUYiXnOr36VIdiH4csupP1rKZoMgsCvSB/Lk=
+github.com/takoyaki-3/go-gtfs v1.1.27 h1:fEm/PXexmCYWomvP2dRE/z23kiBJK/jpCc4uGhfCahU=
+github.com/takoyaki-3/go-gtfs v1.1.27/go.mod h1:CnvJfGGYUYiXnOr36VIdiH4csupP1rKZoMgsCvSB/Lk=
 github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb h1:+ho64ruBJraFsn8q8UL6jPhPRQRHrLMikXmcxQ4vszQ=
 github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb/go.mod h1:39fxS11XWIvygjbgeXg4bpyvAxLZ2lr1Cv+9DbbQ9Ew=
 github.com/takoyaki-3/goraph v0.0.1 h1:Jp8bsymRlE9xUjJL9YatgAYHJr8hUOJ1l+l1R43A8x8=
