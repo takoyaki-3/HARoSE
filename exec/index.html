@@ -78,7 +78,7 @@
           <h4 v-if="t.stop_times.length > 0">{{t.stop_times[0].departure_time.slice(0,5)}} {{t.stop_times[0].stop_name}}</h4>
         </div>
         <div v-if="t.stop_times" style="margin-left:32px;">
-          <p>{{t.vehicle.route_short_name}} {{t.vehicle.trip_headsign}}</p>
+          <!-- <p>{{t.vehicle.trip_headsign}}</p> -->
           <p v-for="s,i in t.stop_times.slice(1,-1)" v-show="i==0||i==t.stop_times.length-1||true">
             {{s.departure_time.slice(0,5)}}　{{s.stop_name}}
           </p>
