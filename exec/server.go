@@ -8,11 +8,10 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/MaaSTechJapan/raptor/loader"
+	"github.com/MaaSTechJapan/raptor/models"
 	"github.com/MaaSTechJapan/raptor/routing"
-	"github.com/google/uuid"
 	. "github.com/takoyaki-3/go-geojson"
 	"github.com/takoyaki-3/go-gtfs"
 	"github.com/takoyaki-3/go-gtfs/pkg"
@@ -68,7 +67,7 @@ func main() {
 		bytes, _ := ioutil.ReadFile("./index.html")
 		fmt.Fprintln(w, string(bytes))
 	})
-	http.HandleFunc("/routing", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/v1/json/routing", func(w http.ResponseWriter, r *http.Request) {
 
 		// Query
 		if q, err := GetQuery(r, g); err != nil {
@@ -79,10 +78,8 @@ func main() {
 			pos := q.ToStop
 			ro := q.Round - 1
 
-			legs := []MTJLegStr{}
+			legs := []models.LegStr{}
 
-			fmt.Println("---")
-			lastTime := memo.Tau[ro][pos].ArrivalTime
 			for pos != q.FromStop {
 				bef := memo.Tau[ro][pos]
 				now := pos
@@ -90,66 +87,43 @@ func main() {
 					fmt.Println("not found !")
 					break
 				}
-				fmt.Println(bef, pkg.Sec2HHMMSS(bef.ArrivalTime), pkg.Sec2HHMMSS(lastTime), g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Name, "->", g.Stops[raptorData.StopId2Index[pos]].Name)
-				lastTime = bef.ArrivalTime
 				pos = bef.BeforeStop
 
-				viaNodes := []MTJNodeStr{}
+				viaNodes := []models.StopTimeStr{}
 				on := false
 				
 				tripId := string(memo.Tau[ro][now].BeforeEdge)
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
 
-				var fromStopTime,toStopTime gtfs.StopTime
 				for _,v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes{
 					if v.StopID == bef.BeforeStop {
 						on = true
-						fromStopTime = v
 					}
 					if on {
 						stopId := v.StopID
-						viaNodes = append(viaNodes, MTJNodeStr{
-							Id:    string(stopId),
-							Lat:   g.Stops[raptorData.StopId2Index[stopId]].Latitude,
-							Lon:   g.Stops[raptorData.StopId2Index[stopId]].Longitude,
-							Title: g.Stops[raptorData.StopId2Index[stopId]].Name,
+						viaNodes = append(viaNodes, models.StopTimeStr{
+							StopId:    string(stopId),
+							StopLat:   g.Stops[raptorData.StopId2Index[stopId]].Latitude,
+							StopLon:   g.Stops[raptorData.StopId2Index[stopId]].Longitude,
+							StopName: g.Stops[raptorData.StopId2Index[stopId]].Name,
 							ArrivalTime: v.Arrival,
 							DepartureTime: v.Departure,
 						})
 					}
 					if v.StopID == now{
-						toStopTime = v
 						break
 					}
 				}
 
-				uuidObj, _ := uuid.NewUUID()
-				id := uuidObj.String()
-				legs = append(legs, MTJLegStr{
-					FromNode: MTJNodeStr{
-						Id:    string(bef.BeforeStop),
-						Lat:   g.Stops[raptorData.StopId2Index[pos]].Latitude,
-						Lon:   g.Stops[raptorData.StopId2Index[pos]].Longitude,
-						Title: g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Name,
-						ArrivalTime: fromStopTime.Arrival,
-						DepartureTime: fromStopTime.Departure,
+				legs = append(legs, models.LegStr{
+					Type: "bus",
+					Trip:			 models.GTFSTripStr{
+						TripId: string(memo.Tau[ro][now].BeforeEdge),
 					},
-					ToNode: MTJNodeStr{
-						Id:    string(now),
-						Lat:   g.Stops[raptorData.StopId2Index[now]].Latitude,
-						Lon:   g.Stops[raptorData.StopId2Index[now]].Longitude,
-						Title: g.Stops[raptorData.StopId2Index[now]].Name,
-						ArrivalTime: toStopTime.Arrival,
-						DepartureTime: toStopTime.Departure,
-					},
-					ViaStops: viaNodes,
-					Transportation: string(memo.Tau[ro][now].BeforeEdge),
-					Id:             id,
-					Uid:            id,
-					Oid:            id,
-					Created:        time.Now().Format("2006-01-02 15:04:05"),
-					Geometry: *NewLineString([][]float64{
+					StopTimes: viaNodes,
+					TimeEdges: []models.TimeEdgeStr{},
+					Geometry: NewLineString([][]float64{
 						[]float64{g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Longitude, g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Latitude},
 						[]float64{g.Stops[raptorData.StopId2Index[now]].Longitude, g.Stops[raptorData.StopId2Index[now]].Latitude},
 					}, nil),
@@ -157,9 +131,9 @@ func main() {
 				ro = ro - 1
 			}
 
-			json.DumpToWriter(MTJResp{
-				Trips: []MTJTripStr{
-					MTJTripStr{
+			json.DumpToWriter(models.ResponsStr{
+				Trips: []models.TripStr{
+					models.TripStr{
 						Legs: legs,
 					},
 				},
@@ -306,6 +280,8 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 	if query.WalkSpeed == 0 {
 		query.WalkSpeed = 80
 	}
+
+	fmt.Println(query.Origin,query.Destination)
 
 	return &routing.Query{
 		ToStop:      FindODNode(query.Destination, g),

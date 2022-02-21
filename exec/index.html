@@ -12,7 +12,7 @@
   </script>
   <meta charset='utf-8'/>
   <meta name="viewport" content="width=400px">
-  <title>RAPTOR 経路検索</title>
+  <title>経路検索</title>
   <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.js'></script>
   <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.css' rel='stylesheet' />
   <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
@@ -29,7 +29,7 @@
 </div>
 <div id='app'>
   <div id='panel'>
-    <!-- <label for="weekday">ダイヤ</label>
+    <label for="weekday">ダイヤ</label>
     <input id="weekday" type="text" value="20210909" v-model="timetable">
     <label for="tenant">対象</label>
     <input id="tenant" type="text" value="tenant" v-model="tenant_id">
@@ -55,7 +55,7 @@
     <label for="routing">地点間検索ベース</label>
     <input type="radio" id="bus_routing" value="bus_routing" v-model="routing_mode">
     <label for="bus_routing">停留所間検索のみ</label>
-    <br> -->
+    <br>
     <p>時間：<input v-model="departureTime" placeholder="edit me" type="time"></p>
 
     <div>
@@ -78,7 +78,7 @@
           <h4 v-if="t.stop_times.length > 0">{{t.stop_times[0].departure_time.slice(0,5)}} {{t.stop_times[0].stop_name}}</h4>
         </div>
         <div v-if="t.stop_times" style="margin-left:32px;">
-          <!-- <p>{{t.vehicle.trip_headsign}}</p> -->
+          <p>{{t.vehicle.route_short_name}} {{t.vehicle.trip_headsign}} {{t.cost.fare}}</p>
           <p v-for="s,i in t.stop_times.slice(1,-1)" v-show="i==0||i==t.stop_times.length-1||true">
             {{s.departure_time.slice(0,5)}}　{{s.stop_name}}
           </p>
@@ -120,7 +120,7 @@ const vue = new Vue({
   data:{
     departureTime:'08:00',
     legs:[],
-    timetable:'20210909',
+    timetable:'20210215',
     tenant_id: '',
     time:1,
     walk:1,
@@ -140,35 +140,45 @@ const vue = new Vue({
   },
   methods:{
     run:function(e){
-      addRoutingURL('./routing?json='+this.json);
+      addRoutingURL('./v1/json/'+this.routing_mode+'?json='+this.json);
     },
     btn_search_click:function(e){
       this.trips = [];
       const origin = {};
       const destination = {};
-      origin.time = HH_MM2Sec(vue.departureTime)
-      destination.time = HH_MM2Sec(vue.departureTime)+3600
+      if(this.time_mode=='mode_org') origin.time = HH_MM2Sec(vue.departureTime)
+      else destination.time = HH_MM2Sec(vue.departureTime)
 
       if(vue.from_text=="" || vue.from_text[0]=='('){
         // origin.stop_id='';
         origin.lat = vue.from_lonlat.lat;
         origin.lon = vue.from_lonlat.lon;
       } else {
-        origin.stop_id=vue.from_text;
+        origin.stop_id=vue.from_stop_id;
       }
       if(vue.to_text=="" || vue.to_text[0]=='('){
         // destination.stop_id='';
         destination.lat = vue.to_lonlat.lat;
         destination.lon = vue.to_lonlat.lon;
       } else {
-        destination.stop_id=vue.to_text;
+        destination.stop_id=vue.to_stop_id;
       }
-      console.log('from',origin,vue.from_text,"hello")
-      console.log('to',destination,vue.to_text,"hello")
-      addRoutingURL('./routing?json='+JSON.stringify({
+      console.log('from',origin)
+      console.log('to',destination)
+      addRoutingURL('./v1/json/'+this.routing_mode+'?json='+JSON.stringify({
         origin:origin,
         destination:destination,
-        json_only:true
+        cost_weight:{
+          time:Number(vue.time),
+          walk:Number(vue.walk),
+          transfer:Number(vue.transfer),
+          distance:Number(vue.distance/1000)
+        },
+        properties:{
+          walking_speed:80,
+          timetable:vue.timetable,
+          tenant_id:vue.tenant_id
+        }
       }));
     },
     selectedFromStopId:function(s){
@@ -192,6 +202,53 @@ const vue = new Vue({
       .addTo(map);
 
       this.btn_search_click();
+    }
+  },
+  watch:{
+    from_text:function(str){
+      if(str[0]=='('||str=='') return;
+
+      // marker
+      fromMarker.remove();
+      toMarker.remove();
+
+      vue.trips = [];
+
+      const url = './v1/json/find_stops?json='+JSON.stringify({
+        name:str,
+        properties:{
+          tenant_id:vue.tenant_id
+        }
+      })
+      console.log(url);
+
+      fetch(url)
+      .then(function (data) {
+        return data.json();
+      })
+      .then(function (json) {
+        if(json.stops.length<20) vue.from_list = json.stops.slice(0,20);
+        if(json.stops.length > 0) vue.selectedFromStopId(json.stops[0])
+      });
+    },
+    to_text:function(str){
+      if(str[0]=='('||str=='') return;
+      const url = './v1/json/find_stops?json='+JSON.stringify({
+        name:str,
+        properties:{
+          tenant_id:vue.tenant_id
+        }
+      })
+      console.log(url);
+
+      fetch(url)
+      .then(function (data) {
+        return data.json();
+      })
+      .then(function (json) {
+        if(json.stops.length<20) vue.to_list = json.stops.slice(0,20);
+        if(json.stops.length > 0) vue.selectedToStopId(json.stops[0])
+      });
     }
   }
 });
@@ -268,14 +325,21 @@ const addRouting = function(fromPoint, toPoint){
       lat:toPoint[1],
       lon:toPoint[0]
     },
-    json_only:true,
+    cost_weight:{
+      time:Number(vue.time),
+      walk:Number(vue.walk),
+      transfer:Number(vue.transfer),
+      distance:Number(vue.distance/1000)
+    },
     properties:{
-      timetable:"20210215"
+      walking_speed:80,
+      timetable:vue.timetable,
+      tenant_id:vue.tenant_id
     }
   }
   if(vue.time_mode=='mode_org') query.origin.time = HH_MM2Sec(vue.departureTime);
   else query.destination.time = HH_MM2Sec(vue.departureTime);
-  addRoutingURL('./routing?json='+JSON.stringify(query));
+  addRoutingURL('./v1/json/'+vue.routing_mode+'?json='+JSON.stringify(query));
 }
 
 const addRoutingURL = function(url){
@@ -306,9 +370,7 @@ const addRoutingURL = function(url){
       bus:"#800",
       wait:"#000"
     };
-    console.log(vue.legs)
     vue.legs.forEach((leg,i) => {
-      console.log('add',leg.geometry)
       layers.push("route"+i);
       map.addLayer({
         "id": "route"+i,
@@ -322,7 +384,7 @@ const addRoutingURL = function(url){
           "line-cap": "round"
         },
         "paint": {
-          "line-color": colors['bus'],
+          "line-color": colors[leg.type],
           "line-width": 8
         }
       });
