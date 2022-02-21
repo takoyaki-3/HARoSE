@@ -44,6 +44,8 @@ github.com/takoyaki-3/go-geojson v0.0.1 h1:uRo5mszCqPUYaQ3CpJk4q86WA7ZjaFzJ+3it3
 github.com/takoyaki-3/go-geojson v0.0.1/go.mod h1:0Yd9ZVbTx+59M//yuOl7FrTTcN8dgx3JSXevt4Nxatg=
 github.com/takoyaki-3/go-gtfs v1.1.27 h1:fEm/PXexmCYWomvP2dRE/z23kiBJK/jpCc4uGhfCahU=
 github.com/takoyaki-3/go-gtfs v1.1.27/go.mod h1:CnvJfGGYUYiXnOr36VIdiH4csupP1rKZoMgsCvSB/Lk=
+github.com/takoyaki-3/go-gtfs-fare v0.0.0 h1:v2YtCxg1A7CnuCXE/L8cAHCewfGy71xpq6jcifKXE9g=
+github.com/takoyaki-3/go-gtfs-fare v0.0.0/go.mod h1:GCcqAMIrJ5NXTuBh2ZiFQot783zs5qw5DPfRuzPcYsc=
 github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb h1:+ho64ruBJraFsn8q8UL6jPhPRQRHrLMikXmcxQ4vszQ=
 github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb/go.mod h1:39fxS11XWIvygjbgeXg4bpyvAxLZ2lr1Cv+9DbbQ9Ew=
 github.com/takoyaki-3/goraph v0.0.1 h1:Jp8bsymRlE9xUjJL9YatgAYHJr8hUOJ1l+l1R43A8x8=

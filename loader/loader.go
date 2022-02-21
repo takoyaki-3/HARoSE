@@ -11,6 +11,7 @@ import (
 	"github.com/takoyaki-3/goraph"
 	"github.com/takoyaki-3/goraph/loader/osm"
 	goraphtool "github.com/takoyaki-3/goraph/tool"
+	fare "github.com/takoyaki-3/go-gtfs-fare"
 )
 
 type ConfMap struct {
@@ -141,6 +142,11 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 		for i, stop := range g.Stops {
 			raptorData.StopId2Index[stop.ID] = i
 		}
-		return raptorData, g, nil
+
+		
+		// 運賃情報の読み込み
+		raptorData.Fare,err = fare.LoadGTFS(conf.GTFS.Path)
+		
+		return raptorData, g, err
 	}
 }

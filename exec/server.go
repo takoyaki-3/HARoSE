@@ -19,6 +19,7 @@ import (
 	json "github.com/takoyaki-3/go-json"
 	"github.com/takoyaki-3/goraph"
 	"github.com/takoyaki-3/goraph/geometry"
+	fare "github.com/takoyaki-3/go-gtfs-fare"
 )
 
 func main() {
@@ -93,26 +94,36 @@ func main() {
 				headSign := ""
 				if len(viaNodes) > 0 {
 					headSign = tool.GetHeadSign(g, trip.ID, viaNodes[0].StopId)
-				}
 
-				legs = append(legs, models.LegStr{
-					Type: "bus",
-					Trip: models.GTFSTripStr{
-						TripId:          trip.ID,
-						TripDescription: trip.DirectionID,
-						RouteLongName:   route.LongName,
-						ServiceId:       trip.ServiceID,
-						TripType:        strconv.Itoa(route.Type),
-						RouteColor:      route.Color,
-						RouteTextColor:  route.TextColor,
-						RouteShortName:  route.ShortName,
-						TripHeadSign:    headSign,
-						RouteId:         trip.RouteID,
-					},
-					StopTimes: viaNodes,
-					TimeEdges: []models.TimeEdgeStr{},
-					Geometry:  NewLineString(latlons, nil),
-				})
+					p,err := fare.GetFareAttribute(raptorData.Fare,viaNodes[0].StopId,viaNodes[len(viaNodes)-1].StopId,trip.RouteID)
+					if err != nil {
+						p = fare.FareAttribute{
+							Price: -1,
+						}
+					}
+
+					legs = append(legs, models.LegStr{
+						Type: "bus",
+						Trip: models.GTFSTripStr{
+							TripId:          trip.ID,
+							TripDescription: trip.DirectionID,
+							RouteLongName:   route.LongName,
+							ServiceId:       trip.ServiceID,
+							TripType:        strconv.Itoa(route.Type),
+							RouteColor:      route.Color,
+							RouteTextColor:  route.TextColor,
+							RouteShortName:  route.ShortName,
+							TripHeadSign:    headSign,
+							RouteId:         trip.RouteID,
+						},
+						StopTimes: viaNodes,
+						TimeEdges: []models.TimeEdgeStr{},
+						Geometry:  NewLineString(latlons, nil),
+						Costs: models.CostStr{
+							Fare: &p.Price,
+						},
+					})
+				}
 				ro = ro - 1
 			}
 
