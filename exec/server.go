@@ -95,12 +95,20 @@ func main() {
 				if len(viaNodes) > 0 {
 					headSign = tool.GetHeadSign(g, trip.ID, viaNodes[0].StopId)
 
-					p,err := fare.GetFareAttribute(raptorData.Fare,viaNodes[0].StopId,viaNodes[len(viaNodes)-1].StopId,trip.RouteID)
+					from := viaNodes[0]
+					to := viaNodes[len(viaNodes)-1]
+					p,err := fare.GetFareAttribute(raptorData.Fare,from.StopId,to.StopId,trip.RouteID)
 					if err != nil {
 						p = fare.FareAttribute{
 							Price: -1,
 						}
 					}
+					cost := models.NewCostStr()
+					*cost.Fare = p.Price
+					*cost.Distance = -1
+					*cost.Time = float64(pkg.HHMMSS2Sec(to.ArrivalTime) - pkg.HHMMSS2Sec(from.DepartureTime))
+					*cost.Transfer = 0
+					*cost.Walk = 0
 
 					legs = append([]models.LegStr{models.LegStr{
 						Type: "bus",
@@ -119,18 +127,23 @@ func main() {
 						StopTimes: viaNodes,
 						TimeEdges: []models.TimeEdgeStr{},
 						Geometry:  NewLineString(latlons, nil),
-						Costs: models.CostStr{
-							Fare: &p.Price,
-						},
+						Costs: cost,
 					}},legs...)
 				}
 				ro = ro - 1
+			}
+
+			// コストの合計
+			c := models.NewCostStr()
+			for _,leg := range legs{
+				c = models.CostAdder(c,leg.Costs)
 			}
 
 			json.DumpToWriter(models.ResponsStr{
 				Trips: []models.TripStr{
 					models.TripStr{
 						Legs: legs,
+						Costs: c,
 					},
 				},
 			}, w)

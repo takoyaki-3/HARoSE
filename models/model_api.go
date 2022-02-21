@@ -39,6 +39,19 @@ func NewCostStr() (c CostStr) {
 	return c
 }
 
+// コストの加算
+func CostAdder(a, b CostStr) (c CostStr) {
+	c.Time = floatPointer(*a.Time + *b.Time)
+	c.Walk = floatPointer(*a.Walk + *b.Walk)
+	c.Transfer = floatPointer(*a.Transfer + *b.Transfer)
+	c.Distance = floatPointer(*a.Distance + *b.Distance)
+	c.Fare = floatPointer(*a.Fare + *b.Fare)
+	if *a.Fare < 0 || *b.Fare < 0{
+		c.Fare = floatPointer(-1)
+	}
+	return c
+}
+
 // レスポンス用構造体
 type ResponsStr struct {
 	Trips []TripStr `json:"trips,omitempty"`
