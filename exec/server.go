@@ -26,6 +26,8 @@ type MTJNodeStr struct {
 	Lat   float64 `json:"lat"`
 	Lon   float64 `json:"lon"`
 	Title string  `json:"title"`
+	ArrivalTime string `json:"arrival_time"`
+	DepartureTime string `json:"departure_time"`
 }
 type MTJLegStr struct {
 	Id             string     `json:"id"`
@@ -94,12 +96,16 @@ func main() {
 
 				viaNodes := []MTJNodeStr{}
 				on := false
-				for _,v := range raptorData.TimeTables[q.Date].StopPatterns[raptorData.TripId2StopPatternIndex[string(memo.Tau[ro][now].BeforeEdge)]].Trips[0].StopTimes{
+				
+				tripId := string(memo.Tau[ro][now].BeforeEdge)
+				routePattern := raptorData.TripId2StopPatternIndex[tripId]
+				tripIndex := raptorData.TripId2Index[tripId]
+
+				var fromStopTime,toStopTime gtfs.StopTime
+				for _,v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes{
 					if v.StopID == bef.BeforeStop {
 						on = true
-					}
-					if v.StopID == now{
-						break
+						fromStopTime = v
 					}
 					if on {
 						stopId := v.StopID
@@ -108,7 +114,13 @@ func main() {
 							Lat:   g.Stops[raptorData.StopId2Index[stopId]].Latitude,
 							Lon:   g.Stops[raptorData.StopId2Index[stopId]].Longitude,
 							Title: g.Stops[raptorData.StopId2Index[stopId]].Name,
+							ArrivalTime: v.Arrival,
+							DepartureTime: v.Departure,
 						})
+					}
+					if v.StopID == now{
+						toStopTime = v
+						break
 					}
 				}
 
@@ -120,12 +132,16 @@ func main() {
 						Lat:   g.Stops[raptorData.StopId2Index[pos]].Latitude,
 						Lon:   g.Stops[raptorData.StopId2Index[pos]].Longitude,
 						Title: g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Name,
+						ArrivalTime: fromStopTime.Arrival,
+						DepartureTime: fromStopTime.Departure,
 					},
 					ToNode: MTJNodeStr{
 						Id:    string(now),
 						Lat:   g.Stops[raptorData.StopId2Index[now]].Latitude,
 						Lon:   g.Stops[raptorData.StopId2Index[now]].Longitude,
 						Title: g.Stops[raptorData.StopId2Index[now]].Name,
+						ArrivalTime: toStopTime.Arrival,
+						DepartureTime: toStopTime.Departure,
 					},
 					ViaStops: viaNodes,
 					Transportation: string(memo.Tau[ro][now].BeforeEdge),
