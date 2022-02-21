@@ -40,10 +40,17 @@ type MTJLegStr struct {
 	SubType        string     `json:"subtype"`
 	FromNode       MTJNodeStr `json:"from_node"`
 	ToNode         MTJNodeStr `json:"to_node"`
+	ViaStops			 []MTJNodeStr `json:"via_nodes"`
 	Transportation string     `json:"transportation"`
 	load           string     `json:"load"`
 	WKT            string     `json:WKT`
 	Geometry       Geometry   `json:"geometry"`
+}
+type MTJTripStr struct {
+	Legs []MTJLegStr `json:"legs"`
+}
+type MTJResp struct {
+	Trips []MTJTripStr `json:"trips"`
 }
 
 func main() {
@@ -85,6 +92,26 @@ func main() {
 				lastTime = bef.ArrivalTime
 				pos = bef.BeforeStop
 
+				viaNodes := []MTJNodeStr{}
+				on := false
+				for _,v := range raptorData.TimeTables[q.Date].StopPatterns[raptorData.TripId2StopPatternIndex[string(memo.Tau[ro][now].BeforeEdge)]].Trips[0].StopTimes{
+					if v.StopID == bef.BeforeStop {
+						on = true
+					}
+					if v.StopID == now{
+						break
+					}
+					if on {
+						stopId := v.StopID
+						viaNodes = append(viaNodes, MTJNodeStr{
+							Id:    string(stopId),
+							Lat:   g.Stops[raptorData.StopId2Index[stopId]].Latitude,
+							Lon:   g.Stops[raptorData.StopId2Index[stopId]].Longitude,
+							Title: g.Stops[raptorData.StopId2Index[stopId]].Name,
+						})
+					}
+				}
+
 				uuidObj, _ := uuid.NewUUID()
 				id := uuidObj.String()
 				legs = append(legs, MTJLegStr{
@@ -100,6 +127,7 @@ func main() {
 						Lon:   g.Stops[raptorData.StopId2Index[now]].Longitude,
 						Title: g.Stops[raptorData.StopId2Index[now]].Name,
 					},
+					ViaStops: viaNodes,
 					Transportation: string(memo.Tau[ro][now].BeforeEdge),
 					Id:             id,
 					Uid:            id,
@@ -113,15 +141,9 @@ func main() {
 				ro = ro - 1
 			}
 
-			type TripStr struct {
-				Legs []MTJLegStr `json:"legs"`
-			}
-			type Resp struct {
-				Trips []TripStr `json:"trips"`
-			}
-			json.DumpToWriter(Resp{
-				Trips: []TripStr{
-					TripStr{
+			json.DumpToWriter(MTJResp{
+				Trips: []MTJTripStr{
+					MTJTripStr{
 						Legs: legs,
 					},
 				},

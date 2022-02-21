@@ -41,6 +41,9 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 	raptorData := new(RAPTORData)
 	raptorData.Transfer = map[string]map[string]float64{}
 	raptorData.TimeTables = map[string]TimeTable{}
+	raptorData.TripId2Index = map[string]int{}
+	raptorData.StopId2Index = map[string]int{}
+	raptorData.TripId2StopPatternIndex = map[string]int{}
 
 	var conf Conf
 	if err := json.LoadFromPath("./conf.json", &conf); err != nil {
@@ -113,6 +116,10 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				// 駅ごとの停車する路線リスト
 				stopRoutes := map[string][]int{}
 				for index, route := range routePatterns {
+					for i,trip := range route.Trips{
+						raptorData.TripId2Index[trip.Properties.TripID] = i
+						raptorData.TripId2StopPatternIndex[trip.Properties.TripID] = index
+					}
 					trip := route.Trips[0]
 					for _, stopTime := range trip.StopTimes {
 						stopRoutes[stopTime.StopID] = append(stopRoutes[stopTime.StopID], index)
