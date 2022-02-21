@@ -26,14 +26,14 @@ type ConfGtfs struct {
 }
 
 type Conf struct {
-	StartDate    string  `json:"start_date"`
-	EndDate      string  `json:"end_date"`
-	GTFS 				 ConfGtfs `json:"gtfs"`
-	Map          ConfMap `json:"map"`
-	ConnectRange float64 `json:"connect_range"`
-	NumThread    int     `json:"num_threads"`
-	WalkingSpeed float64 `json:"walking_speed"`
-	IsUseGTFSTransfer bool `json:"is_use_GTFS_transfer"`
+	StartDate         string   `json:"start_date"`
+	EndDate           string   `json:"end_date"`
+	GTFS              ConfGtfs `json:"gtfs"`
+	Map               ConfMap  `json:"map"`
+	ConnectRange      float64  `json:"connect_range"`
+	NumThread         int      `json:"num_threads"`
+	WalkingSpeed      float64  `json:"walking_speed"`
+	IsUseGTFSTransfer bool     `json:"is_use_GTFS_transfer"`
 }
 
 func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
@@ -73,10 +73,10 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				if conf.NumThread == 0 {
 					conf.NumThread = 1
 				}
-				if conf.WalkingSpeed == 0{
+				if conf.WalkingSpeed == 0 {
 					conf.WalkingSpeed = 80
 				}
-				if conf.ConnectRange == 0{
+				if conf.ConnectRange == 0 {
 					conf.ConnectRange = 100
 				}
 				if err := goraphtool.CutGoraph(&road, goraph.LatLon{
@@ -88,11 +88,11 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				}); err != nil {
 					return &RAPTORData{}, &gtfs.GTFS{}, err
 				}
-				tool.MakeTransfer(g,conf.ConnectRange,conf.WalkingSpeed,road,conf.NumThread)
+				tool.MakeTransfer(g, conf.ConnectRange, conf.WalkingSpeed, road, conf.NumThread)
 			}
 		}
 
-		for _,v := range g.Transfers{
+		for _, v := range g.Transfers {
 			if _, ok := raptorData.Transfer[v.FromStopID]; !ok {
 				raptorData.Transfer[v.FromStopID] = map[string]float64{}
 			}
@@ -116,7 +116,7 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				// 駅ごとの停車する路線リスト
 				stopRoutes := map[string][]int{}
 				for index, route := range routePatterns {
-					for i,trip := range route.Trips{
+					for i, trip := range route.Trips {
 						raptorData.TripId2Index[trip.Properties.TripID] = i
 						raptorData.TripId2StopPatternIndex[trip.Properties.TripID] = index
 					}
@@ -136,7 +136,7 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				}
 			}
 		}
-		
+
 		raptorData.StopId2Index = map[string]int{}
 		for i, stop := range g.Stops {
 			raptorData.StopId2Index[stop.ID] = i

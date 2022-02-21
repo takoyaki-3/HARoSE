@@ -6,10 +6,10 @@ import (
 
 // クエリ用構造体
 type QueryStr struct {
-	Origin      QueryNodeStr   `json:"origin"`
-	Destination QueryNodeStr   `json:"destination"`
+	Origin      QueryNodeStr `json:"origin"`
+	Destination QueryNodeStr `json:"destination"`
 	// CostWeight  CostStr        `json:"cost_weight"`
-	Properties  PropertiesStr  `json:"properties"`
+	Properties PropertiesStr `json:"properties"`
 }
 
 // 始点発着点重み
@@ -41,12 +41,12 @@ func NewCostStr() (c CostStr) {
 
 // レスポンス用構造体
 type ResponsStr struct {
-	Trips     []TripStr      `json:"trips,omitempty"`
-	Meta      struct {
+	Trips []TripStr `json:"trips,omitempty"`
+	Meta  struct {
 		EngineVersion string `json:"engine_version,omitempty"`
 		LastUpdated   string `json:"last_updated,omitempty"`
 	} `json:"meta,omitempty"`
-	Status    string `json:"status,omitempty"`
+	Status string `json:"status,omitempty"`
 }
 
 // リクエストプロパティ
@@ -81,16 +81,16 @@ type TripStr struct {
 }
 
 type StopTimeStr struct {
-	StopId        string `json:"stop_id"`
-	ZoneId				string `json:"zone_id"`
-	StopLat				float64 `json:"stop_lat"`
-	StopLon				float64 `json:"stop_lon"`
-	StopName      string `json:"stop_name"`
-	ArrivalTime   string `json:"arrival_time"`
-	DepartureTime string `json:"departure_time"`
-	PickupType    string `json:"pickup_type"`
-	DropOffType   string `json:"drop_off_type"`
-	StopSequence  int    `json:"stop_sequence"`
+	StopId        string  `json:"stop_id"`
+	ZoneId        string  `json:"zone_id"`
+	StopLat       float64 `json:"stop_lat"`
+	StopLon       float64 `json:"stop_lon"`
+	StopName      string  `json:"stop_name"`
+	ArrivalTime   string  `json:"arrival_time"`
+	DepartureTime string  `json:"departure_time"`
+	PickupType    string  `json:"pickup_type"`
+	DropOffType   string  `json:"drop_off_type"`
+	StopSequence  int     `json:"stop_sequence"`
 }
 
 // １乗車

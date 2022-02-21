@@ -58,14 +58,14 @@ func main() {
 
 				viaNodes := []models.StopTimeStr{}
 				on := false
-				
+
 				tripId := string(memo.Tau[ro][now].BeforeEdge)
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
 
 				latlons := [][]float64{}
 
-				for _,v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes{
+				for _, v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes {
 					if v.StopID == bef.BeforeStop {
 						on = true
 					}
@@ -73,45 +73,45 @@ func main() {
 						stopId := v.StopID
 						s := g.Stops[raptorData.StopId2Index[stopId]]
 						viaNodes = append(viaNodes, models.StopTimeStr{
-							StopId:    string(stopId),
-							StopLat:   s.Latitude,
-							StopLon:   s.Longitude,
-							StopName: 	s.Name,
-							ArrivalTime: v.Arrival,
+							StopId:        string(stopId),
+							StopLat:       s.Latitude,
+							StopLon:       s.Longitude,
+							StopName:      s.Name,
+							ArrivalTime:   v.Arrival,
 							DepartureTime: v.Departure,
 						})
-						latlons = append(latlons, []float64{s.Longitude,s.Latitude})
+						latlons = append(latlons, []float64{s.Longitude, s.Latitude})
 					}
-					if v.StopID == now{
+					if v.StopID == now {
 						break
 					}
 				}
 
 				// trip情報の取得
-				trip := tool.GetTrip(g,string(memo.Tau[ro][now].BeforeEdge))
-				route := tool.GetRoute(g,trip.RouteID)
+				trip := tool.GetTrip(g, string(memo.Tau[ro][now].BeforeEdge))
+				route := tool.GetRoute(g, trip.RouteID)
 				headSign := ""
-				if len(viaNodes) > 0{
-					headSign = tool.GetHeadSign(g,trip.ID,viaNodes[0].StopId)
+				if len(viaNodes) > 0 {
+					headSign = tool.GetHeadSign(g, trip.ID, viaNodes[0].StopId)
 				}
 
 				legs = append(legs, models.LegStr{
 					Type: "bus",
-					Trip:			 models.GTFSTripStr{
-						TripId: trip.ID,
+					Trip: models.GTFSTripStr{
+						TripId:          trip.ID,
 						TripDescription: trip.DirectionID,
-						RouteLongName: route.LongName,
-						ServiceId: trip.ServiceID,
-						TripType: strconv.Itoa(route.Type),
-						RouteColor: route.Color,
-						RouteTextColor: route.TextColor,
-						RouteShortName: route.ShortName,
-						TripHeadSign: headSign,
-						RouteId: trip.RouteID,
+						RouteLongName:   route.LongName,
+						ServiceId:       trip.ServiceID,
+						TripType:        strconv.Itoa(route.Type),
+						RouteColor:      route.Color,
+						RouteTextColor:  route.TextColor,
+						RouteShortName:  route.ShortName,
+						TripHeadSign:    headSign,
+						RouteId:         trip.RouteID,
 					},
 					StopTimes: viaNodes,
 					TimeEdges: []models.TimeEdgeStr{},
-					Geometry: NewLineString(latlons, nil),
+					Geometry:  NewLineString(latlons, nil),
 				})
 				ro = ro - 1
 			}
@@ -159,7 +159,7 @@ func main() {
 		}
 	})
 	fmt.Println("start server.")
-	if err := http.ListenAndServe("0.0.0.0:8000", nil);err != nil {
+	if err := http.ListenAndServe("0.0.0.0:8000", nil); err != nil {
 		log.Fatalln(err)
 	}
 }
