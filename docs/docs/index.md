@@ -114,9 +114,56 @@ http://localhost:8000/routing_surface?json={"origin":{"time":28800,"lat":34.3829
 
 ![](./images/routing_surface.png)
 
-<!-- ## Project layout
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files. -->
+
+### レスポンス
+
+```
+[]trips                 # 旅程
+  []legs                # １乗車
+    type                # Leg種類 (wait, walk, bus)
+    vechicle            # 乗り物情報
+      trip_id           # GTFSに準じる
+      trip_description  # GTFSに準じる
+      route_long_name   # GTFSに準じる
+      service_id        # GTFSに準じる
+      trip_type         # GTFSに準じる
+      route_color       # GTFSに準じる
+      route_text_color  # GTFSに準じる
+      route_short_name  # GTFSに準じる
+      trip_headsign     # GTFSに準じる
+      route_id          # GTFSに準じる  
+    []stop_times        # GTFSに準じる
+      stop_id           # GTFSに準じる
+      zone_id           # GTFSに準じる
+      stop_lat          # GTFSに準じる
+      stop_lon          # GTFSに準じる
+      stop_name         # GTFSに準じる
+      arrival_time      # GTFSに準じる
+      departure_time    # GTFSに準じる
+      pickup_type       # GTFSに準じる
+      drop_off_type     # GTFSに準じる
+      stop_sequence     # GTFSに準じる
+    []time_edges        # 混雑集約などに用いる時空間グラフにおける辺
+    geometry            # 地理情報
+      type              # GeoJSONに準じる
+      []coordinates     # GeoJSONに準じる
+    cost                # Legのコスト
+      time              # 所要時間
+      walk              # 歩行距離
+      transfer          # 乗車回数
+      distance          # 距離
+      fare              # 運賃
+    properties          # プロパティ
+      arrival_time      # 到着時刻
+      departure_time    # 出発時刻
+  cost                  # Tripのコスト
+    time                # 所要時間
+    walk                # 歩行距離
+    transfer            # 乗車回数
+    distance            # 移動距離
+    fare                # 運賃
+  properties            # プロパティ
+    arrival_time        # 到着時刻
+    departure_time      # 出発時刻
+```
