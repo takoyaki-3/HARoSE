@@ -48,19 +48,10 @@ type MTJLegStr struct {
 
 func main() {
 
+	// RAPTOR用データの読み込み
 	raptorData, g, err := loader.LoadGTFS()
 	if err != nil {
 		log.Fatalln(err)
-	}
-
-	StopId2Index := map[string]int{}
-	for i, stop := range g.Stops {
-		StopId2Index[stop.ID] = i
-	}
-
-	mapStops := map[string]int{}
-	for i, s := range g.Stops {
-		mapStops[s.ID] = i
 	}
 
 	// index.html
@@ -90,7 +81,7 @@ func main() {
 					fmt.Println("not found !")
 					break
 				}
-				fmt.Println(bef, pkg.Sec2HHMMSS(bef.ArrivalTime), pkg.Sec2HHMMSS(lastTime), g.Stops[StopId2Index[bef.BeforeStop]].Name, "->", g.Stops[StopId2Index[pos]].Name)
+				fmt.Println(bef, pkg.Sec2HHMMSS(bef.ArrivalTime), pkg.Sec2HHMMSS(lastTime), g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Name, "->", g.Stops[raptorData.StopId2Index[pos]].Name)
 				lastTime = bef.ArrivalTime
 				pos = bef.BeforeStop
 
@@ -99,15 +90,15 @@ func main() {
 				legs = append(legs, MTJLegStr{
 					FromNode: MTJNodeStr{
 						Id:    string(bef.BeforeStop),
-						Lat:   g.Stops[StopId2Index[pos]].Latitude,
-						Lon:   g.Stops[StopId2Index[pos]].Longitude,
-						Title: g.Stops[StopId2Index[bef.BeforeStop]].Name,
+						Lat:   g.Stops[raptorData.StopId2Index[pos]].Latitude,
+						Lon:   g.Stops[raptorData.StopId2Index[pos]].Longitude,
+						Title: g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Name,
 					},
 					ToNode: MTJNodeStr{
 						Id:    string(now),
-						Lat:   g.Stops[StopId2Index[now]].Latitude,
-						Lon:   g.Stops[StopId2Index[now]].Longitude,
-						Title: g.Stops[StopId2Index[now]].Name,
+						Lat:   g.Stops[raptorData.StopId2Index[now]].Latitude,
+						Lon:   g.Stops[raptorData.StopId2Index[now]].Longitude,
+						Title: g.Stops[raptorData.StopId2Index[now]].Name,
 					},
 					Transportation: string(memo.Tau[ro][now].BeforeEdge),
 					Id:             id,
@@ -115,8 +106,8 @@ func main() {
 					Oid:            id,
 					Created:        time.Now().Format("2006-01-02 15:04:05"),
 					Geometry: *NewLineString([][]float64{
-						[]float64{g.Stops[StopId2Index[bef.BeforeStop]].Longitude, g.Stops[StopId2Index[bef.BeforeStop]].Latitude},
-						[]float64{g.Stops[StopId2Index[now]].Longitude, g.Stops[StopId2Index[now]].Latitude},
+						[]float64{g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Longitude, g.Stops[raptorData.StopId2Index[bef.BeforeStop]].Latitude},
+						[]float64{g.Stops[raptorData.StopId2Index[now]].Longitude, g.Stops[raptorData.StopId2Index[now]].Latitude},
 					}, nil),
 				})
 				ro = ro - 1
@@ -151,7 +142,7 @@ func main() {
 
 			fc := NewFeatureCollection()
 			for stopId, m := range memo.Tau[ro] {
-				s := g.Stops[mapStops[stopId]]
+				s := g.Stops[raptorData.StopId2Index[stopId]]
 				props := map[string]string{}
 				props["time"] = strconv.Itoa(m.ArrivalTime - q.FromTime)
 				props["arrival_time"] = pkg.Sec2HHMMSS(m.ArrivalTime)

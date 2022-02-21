@@ -21,9 +21,14 @@ type ConfMap struct {
 	FileName string  `json:"file_name"`
 }
 
+type ConfGtfs struct {
+	Path string `json:"path"`
+}
+
 type Conf struct {
 	StartDate    string  `json:"start_date"`
 	EndDate      string  `json:"end_date"`
+	GTFS 				 ConfGtfs `json:"gtfs"`
 	Map          ConfMap `json:"map"`
 	ConnectRange float64 `json:"connect_range"`
 	NumThread    int     `json:"num_threads"`
@@ -42,7 +47,7 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 		return &RAPTORData{}, &gtfs.GTFS{}, err
 	}
 
-	if g, err := gtfs.Load("./GTFS", nil); err != nil {
+	if g, err := gtfs.Load(conf.GTFS.Path, nil); err != nil {
 		return &RAPTORData{}, &gtfs.GTFS{}, err
 	} else {
 		if !conf.IsUseGTFSTransfer {
@@ -123,6 +128,11 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 					break
 				}
 			}
+		}
+		
+		raptorData.StopId2Index = map[string]int{}
+		for i, stop := range g.Stops {
+			raptorData.StopId2Index[stop.ID] = i
 		}
 		return raptorData, g, nil
 	}
