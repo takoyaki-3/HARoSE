@@ -42,7 +42,7 @@ type MTJLegStr struct {
 	SubType        string     `json:"subtype"`
 	FromNode       MTJNodeStr `json:"from_node"`
 	ToNode         MTJNodeStr `json:"to_node"`
-	ViaStops			 []MTJNodeStr `json:"via_nodes"`
+	ViaStops			 []MTJNodeStr `json:"stop_times"`
 	Transportation string     `json:"transportation"`
 	load           string     `json:"load"`
 	WKT            string     `json:WKT`
