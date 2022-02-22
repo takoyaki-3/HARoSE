@@ -80,10 +80,10 @@ http://localhost:8000/routing?json={"origin":{"lat":34.37692415452747,"lon":132.
 |destination.lat|目的地点の緯度|条件付き必須|
 |destination.lon|目的地点の経度|条件付き必須|
 |destination.stop_id|目的地点のstop_id|条件付き必須|
-|LimitTime|経路探索する上での最大許容時刻|36000|秒|
-|LimitTransfer|経路探索する上での最大許容乗車回数|5|回|
-|WalkSpeed|歩行速度|80|メートル毎秒|
-|Property.Timetable|経路探索する時刻表（日付）|必須|
+|limit.time|経路探索する上での最大許容時刻|36000|秒|
+|limit.transfer|経路探索する上での最大許容乗車回数|5|回|
+|property.walk_speed|歩行速度|80|メートル毎秒|
+|property.timetable|経路探索する時刻表（日付）|必須|
 <!-- |destination.time|0:00を基準とした到着時刻|必須|秒| -->
 
 

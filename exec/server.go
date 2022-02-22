@@ -216,11 +216,14 @@ type QueryNodeStr struct {
 	Lon    *float64 `json:"lon"`
 	Time   *int     `json:"time"`
 }
+type QueryLimit struct {
+	Time     int      `json:"time"`
+	Transfer int      `json:"transfer"`
+}
 type QueryStr struct {
 	Origin        QueryNodeStr  `json:"origin"`
 	Destination   QueryNodeStr  `json:"destination"`
-	LimitTime     int           `json:"limit_time"`
-	LimitTransfer int           `json:"limit_transfer"`
+	Limit         QueryLimit    `json:"limit"`
 	WalkSpeed     float64       `json:"walk_speed"`
 	Property      QueryProperty `json:"properties"`
 }
@@ -240,11 +243,11 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 	if err := GetRequestData(r, &query); err != nil {
 		return &routing.Query{}, err
 	}
-	if query.LimitTime == 0 {
-		query.LimitTime = 3600 * 10
+	if query.Limit.Time == 0 {
+		query.Limit.Time = 3600 * 10
 	}
-	if query.LimitTransfer == 0 {
-		query.LimitTransfer = 5
+	if query.Limit.Transfer == 0 {
+		query.Limit.Transfer = 5
 	}
 	if query.WalkSpeed == 0 {
 		query.WalkSpeed = 80
@@ -255,8 +258,8 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 		FromStop:    FindODNode(query.Origin, g),
 		FromTime:    *query.Origin.Time,
 		MinuteSpeed: query.WalkSpeed,
-		Round:       query.LimitTransfer,
-		LimitTime:   *query.Origin.Time + query.LimitTime,
+		Round:       query.Limit.Transfer,
+		LimitTime:   *query.Origin.Time + query.Limit.Time,
 		Date:        query.Property.Timetable,
 	}, nil
 }
