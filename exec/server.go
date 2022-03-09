@@ -17,8 +17,7 @@ import (
 	"github.com/takoyaki-3/go-gtfs/pkg"
 	"github.com/takoyaki-3/go-gtfs/tool"
 	json "github.com/takoyaki-3/go-json"
-	"github.com/takoyaki-3/goraph"
-	"github.com/takoyaki-3/goraph/geometry"
+	gm "github.com/takoyaki-3/go-map"
 	fare "github.com/takoyaki-3/go-gtfs-fare"
 )
 
@@ -193,10 +192,10 @@ func FindODNode(qns QueryNodeStr, g *gtfs.GTFS) string {
 	minD := math.MaxFloat64
 	if qns.StopId == nil {
 		for _, stop := range g.Stops {
-			d := geometry.HubenyDistance(goraph.LatLon{
+			d := gm.HubenyDistance(gm.Node{
 				Lat: stop.Latitude,
 				Lon: stop.Longitude},
-				goraph.LatLon{
+				gm.Node{
 					Lat: *qns.Lat,
 					Lon: *qns.Lon})
 			if d < minD {

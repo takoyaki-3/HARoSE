@@ -8,9 +8,7 @@ import (
 	"github.com/takoyaki-3/go-gtfs/stop_pattern"
 	"github.com/takoyaki-3/go-gtfs/tool"
 	json "github.com/takoyaki-3/go-json"
-	"github.com/takoyaki-3/goraph"
-	"github.com/takoyaki-3/goraph/loader/osm"
-	goraphtool "github.com/takoyaki-3/goraph/tool"
+	gm "github.com/takoyaki-3/go-map"
 	fare "github.com/takoyaki-3/go-gtfs-fare"
 )
 
@@ -57,7 +55,10 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 		if !conf.IsUseGTFSTransfer {
 			if conf.Map.FileName != "" {
 				// 地図データ読み込み
-				road := osm.Load(conf.Map.FileName)
+				road, err := gm.LoadOSM(conf.Map.FileName)
+				if err != nil {
+					return &RAPTORData{},&gtfs.GTFS{},err
+				}
 				// 緯度経度で切り取り
 				if conf.Map.MaxLat == 0 {
 					conf.Map.MaxLat = 90
@@ -80,10 +81,10 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				if conf.ConnectRange == 0 {
 					conf.ConnectRange = 100
 				}
-				if err := goraphtool.CutGoraph(&road, goraph.LatLon{
+				if err := road.CutGraph(gm.Node{
 					Lat: conf.Map.MaxLat,
 					Lon: conf.Map.MinLon,
-				}, goraph.LatLon{
+				}, gm.Node{
 					Lat: conf.Map.MinLat,
 					Lon: conf.Map.MaxLon,
 				}); err != nil {
