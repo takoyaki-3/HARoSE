@@ -246,7 +246,7 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 		query.Limit.Time = 3600 * 10
 	}
 	if query.Limit.Transfer == 0 {
-		query.Limit.Transfer = 5
+		query.Limit.Transfer = 15
 	}
 	if query.WalkSpeed == 0 {
 		query.WalkSpeed = 80
