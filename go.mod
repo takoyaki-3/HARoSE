@@ -18,4 +18,4 @@ require (
 // replace github.com/takoyaki-3/go-map => C:\Users\hatano.yuuta\Documents\go-map
 // replace github.com/takoyaki-3/go-gtfs/v2 => C:\Users\hatano.yuuta\Documents\go-gtfs
 
-replace github.com/takoyaki-3/go-routing-interface => C:\Users\hatano.yuuta\Documents\go-routing-interface
+// replace github.com/takoyaki-3/go-routing-interface => C:\Users\hatano.yuuta\Documents\go-routing-interface

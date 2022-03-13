@@ -38,12 +38,15 @@ github.com/takoyaki-3/go-geojson v0.1.0 h1:RHFTR9oTTUTW3gnu43Qrzo4dyoOsyG5Wm9tj3
 github.com/takoyaki-3/go-geojson v0.1.0/go.mod h1:0Yd9ZVbTx+59M//yuOl7FrTTcN8dgx3JSXevt4Nxatg=
 github.com/takoyaki-3/go-gtfs-fare v0.0.0 h1:v2YtCxg1A7CnuCXE/L8cAHCewfGy71xpq6jcifKXE9g=
 github.com/takoyaki-3/go-gtfs-fare v0.0.0/go.mod h1:GCcqAMIrJ5NXTuBh2ZiFQot783zs5qw5DPfRuzPcYsc=
+github.com/takoyaki-3/go-gtfs/v2 v2.0.0/go.mod h1:QGnwHqQcFBMG49ggqSCHYs5+anovVgzD11IPp0cxNAY=
 github.com/takoyaki-3/go-gtfs/v2 v2.0.1 h1:1jo5rVKYstFw6yHjq4yBATt27djOyHFnjYR80QiGxVo=
 github.com/takoyaki-3/go-gtfs/v2 v2.0.1/go.mod h1:QGnwHqQcFBMG49ggqSCHYs5+anovVgzD11IPp0cxNAY=
 github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb h1:+ho64ruBJraFsn8q8UL6jPhPRQRHrLMikXmcxQ4vszQ=
 github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb/go.mod h1:39fxS11XWIvygjbgeXg4bpyvAxLZ2lr1Cv+9DbbQ9Ew=
 github.com/takoyaki-3/go-map/v2 v2.0.2 h1:5W/Et7T4+ik6oORcPqDzexA49Aukbl5mNPahP2wOaEU=
 github.com/takoyaki-3/go-map/v2 v2.0.2/go.mod h1:chZOdr+UIiC9l6AuTwoA/yuTlnSjpro8jnWT7qTScY4=
+github.com/takoyaki-3/go-routing-interface v0.0.1 h1:/dTdEVbAWDpWulSTXPtd31PEd05QFdtULjCKXDm4sfI=
+github.com/takoyaki-3/go-routing-interface v0.0.1/go.mod h1:WC5Rf2IXAzKs0Eq5r0uy5XlSIis2HK0o1/b9HYPjLqE=
 github.com/uber/h3-go v3.0.1+incompatible h1:RVpBm8qd7mM94YuIhNQfCXpVj6mPY6gNsVstDg1FvjY=
 github.com/uber/h3-go v3.0.1+incompatible/go.mod h1:66a2M4rQlf+dtkTWj3bHoLFgDT/Rt4kLT8dMuEQVQvw=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
