@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	. "github.com/MaaSTechJapan/raptor"
-	"github.com/takoyaki-3/go-gtfs/pkg"
+	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 )
 
 type Query struct {
@@ -58,14 +58,14 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 					// sort.Slice(trip.StopTimes,func(i, j int) bool {
 					// 	return trip.StopTimes[i].Departure < trip.StopTimes[j].Departure
 					// })
-					if pkg.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime {
+					if gtfs.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime {
 						continue
 					}
 					for _, stopTime := range trip.StopTimes {
 						if riding {
 							isUpdate := false
 							if v, ok := memo.Tau[r][stopTime.StopID]; ok {
-								if pkg.HHMMSS2Sec(stopTime.Arrival) < v.ArrivalTime {
+								if gtfs.HHMMSS2Sec(stopTime.Arrival) < v.ArrivalTime {
 									isUpdate = true
 								}
 							} else {
@@ -73,7 +73,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 							}
 							if isUpdate {
 								memo.Tau[r][stopTime.StopID] = NodeMemo{
-									ArrivalTime: pkg.HHMMSS2Sec(stopTime.Arrival),
+									ArrivalTime: gtfs.HHMMSS2Sec(stopTime.Arrival),
 									BeforeStop:  fromStopId,
 									BeforeEdge:  trip.Properties.TripID,
 								}
@@ -81,7 +81,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 							}
 						} else {
 							if stopTime.StopID == fromStopId {
-								if pkg.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r][fromStopId].ArrivalTime {
+								if gtfs.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r][fromStopId].ArrivalTime {
 									break
 								}
 								riding = true

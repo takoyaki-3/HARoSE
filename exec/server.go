@@ -12,13 +12,11 @@ import (
 	"github.com/MaaSTechJapan/raptor/loader"
 	"github.com/MaaSTechJapan/raptor/routing"
 	. "github.com/takoyaki-3/go-geojson"
-	"github.com/takoyaki-3/go-gtfs"
-	"github.com/takoyaki-3/go-gtfs/pkg"
-	"github.com/takoyaki-3/go-gtfs/tool"
+	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	json "github.com/takoyaki-3/go-json"
-	gm "github.com/takoyaki-3/go-map"
 	fare "github.com/takoyaki-3/go-gtfs-fare"
 	ri "github.com/takoyaki-3/go-routing-interface"
+	gm "github.com/takoyaki-3/go-map/v2"
 )
 
 func main() {
@@ -88,8 +86,8 @@ func main() {
 				}
 
 				// trip情報の取得
-				trip := tool.GetTrip(g, string(memo.Tau[ro][now].BeforeEdge))
-				route := tool.GetRoute(g, trip.RouteID)
+				trip := g.GetTrip(string(memo.Tau[ro][now].BeforeEdge))
+				route := g.GetRoute(trip.RouteID)
 				if len(viaNodes) > 0 {
 
 					from := viaNodes[0]
@@ -103,7 +101,7 @@ func main() {
 					cost := ri.NewCostStr()
 					*cost.Fare = p.Price
 					*cost.Distance = -1
-					*cost.Time = float64(pkg.HHMMSS2Sec(to.ArrivalTime) - pkg.HHMMSS2Sec(from.DepartureTime))
+					*cost.Time = float64(gtfs.HHMMSS2Sec(to.ArrivalTime) - gtfs.HHMMSS2Sec(from.DepartureTime))
 					*cost.Transfer = 0
 					*cost.Walk = 0
 
@@ -152,7 +150,7 @@ func main() {
 				for k, v := range m {
 					props := map[string]string{}
 					props["stop_id"] = k
-					props["arrival_time"] = pkg.Sec2HHMMSS(v.ArrivalTime)
+					props["arrival_time"] = gtfs.Sec2HHMMSS(v.ArrivalTime)
 					props["stop_name"] = g.Stops[StopId2Index[k]].Name
 					props["round"] = strconv.Itoa(r)
 					fc.Features = append(fc.Features, Feature{

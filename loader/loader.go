@@ -4,11 +4,9 @@ import (
 	"time"
 
 	. "github.com/MaaSTechJapan/raptor"
-	"github.com/takoyaki-3/go-gtfs"
-	"github.com/takoyaki-3/go-gtfs/stop_pattern"
-	"github.com/takoyaki-3/go-gtfs/tool"
+	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	json "github.com/takoyaki-3/go-json"
-	gm "github.com/takoyaki-3/go-map"
+	gm "github.com/takoyaki-3/go-map/v2"
 	fare "github.com/takoyaki-3/go-gtfs-fare"
 )
 
@@ -90,7 +88,7 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				}); err != nil {
 					return &RAPTORData{}, &gtfs.GTFS{}, err
 				}
-				tool.MakeTransfer(g, conf.ConnectRange, conf.WalkingSpeed, road, conf.NumThread)
+				g.AddTransfer(conf.ConnectRange, conf.WalkingSpeed, road, conf.NumThread)
 			}
 		}
 
@@ -110,10 +108,10 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 		} else {
 			for {
 				// 日付をベースとした絞り込み
-				dateG := tool.ExtractByDate(g, date)
+				dateG := g.ExtractByDate(date)
 
 				// 停車パターンの取得
-				routePatterns := stoppattern.GetRoutePatterns(dateG)
+				routePatterns := dateG.GetRoutePatterns()
 
 				// 駅ごとの停車する路線リスト
 				stopRoutes := map[string][]int{}
