@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/MaaSTechJapan/raptor/loader"
-	"github.com/MaaSTechJapan/raptor/models"
 	"github.com/MaaSTechJapan/raptor/routing"
 	. "github.com/takoyaki-3/go-geojson"
 	"github.com/takoyaki-3/go-gtfs"
@@ -19,6 +18,7 @@ import (
 	json "github.com/takoyaki-3/go-json"
 	gm "github.com/takoyaki-3/go-map"
 	fare "github.com/takoyaki-3/go-gtfs-fare"
+	ri "github.com/takoyaki-3/go-routing-interface"
 )
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 			pos := q.ToStop
 			ro := q.Round - 1
 
-			legs := []models.LegStr{}
+			legs := []ri.LegStr{}
 
 			for pos != q.FromStop {
 				bef := memo.Tau[ro][pos]
@@ -56,7 +56,7 @@ func main() {
 				}
 				pos = bef.BeforeStop
 
-				viaNodes := []models.StopTimeStr{}
+				viaNodes := []ri.StopTimeStr{}
 				on := false
 
 				tripId := string(memo.Tau[ro][now].BeforeEdge)
@@ -72,8 +72,8 @@ func main() {
 					if on {
 						stopId := v.StopID
 						s := g.Stops[raptorData.StopId2Index[stopId]]
-						viaNodes = append(viaNodes, models.StopTimeStr{
-							StopId:        string(stopId),
+						viaNodes = append(viaNodes, ri.StopTimeStr{
+							StopID:        string(stopId),
 							StopLat:       s.Latitude,
 							StopLon:       s.Longitude,
 							StopName:      s.Name,
@@ -90,41 +90,28 @@ func main() {
 				// trip情報の取得
 				trip := tool.GetTrip(g, string(memo.Tau[ro][now].BeforeEdge))
 				route := tool.GetRoute(g, trip.RouteID)
-				headSign := ""
 				if len(viaNodes) > 0 {
-					headSign = tool.GetHeadSign(g, trip.ID, viaNodes[0].StopId)
 
 					from := viaNodes[0]
 					to := viaNodes[len(viaNodes)-1]
-					p,err := fare.GetFareAttribute(raptorData.Fare,from.StopId,to.StopId,trip.RouteID)
+					p,err := fare.GetFareAttribute(raptorData.Fare,from.StopID,to.StopID,trip.RouteID)
 					if err != nil {
 						p = fare.FareAttribute{
 							Price: -1,
 						}
 					}
-					cost := models.NewCostStr()
+					cost := ri.NewCostStr()
 					*cost.Fare = p.Price
 					*cost.Distance = -1
 					*cost.Time = float64(pkg.HHMMSS2Sec(to.ArrivalTime) - pkg.HHMMSS2Sec(from.DepartureTime))
 					*cost.Transfer = 0
 					*cost.Walk = 0
 
-					legs = append([]models.LegStr{models.LegStr{
+					legs = append([]ri.LegStr{ri.LegStr{
 						Type: "bus",
-						Trip: models.GTFSTripStr{
-							TripId:          trip.ID,
-							TripDescription: trip.DirectionID,
-							RouteLongName:   route.LongName,
-							ServiceId:       trip.ServiceID,
-							TripType:        strconv.Itoa(route.Type),
-							RouteColor:      route.Color,
-							RouteTextColor:  route.TextColor,
-							RouteShortName:  route.ShortName,
-							TripHeadSign:    headSign,
-							RouteId:         trip.RouteID,
-						},
+						Trip: trip,
+						Route: route,
 						StopTimes: viaNodes,
-						TimeEdges: []models.TimeEdgeStr{},
 						Geometry:  NewLineString(latlons, nil),
 						Costs: cost,
 					}},legs...)
@@ -133,14 +120,14 @@ func main() {
 			}
 
 			// コストの合計
-			c := models.NewCostStr()
+			c := ri.NewCostStr()
 			for _,leg := range legs{
-				c = models.CostAdder(c,leg.Costs)
+				c = ri.CostAdder(c,leg.Costs)
 			}
 
-			json.DumpToWriter(models.ResponsStr{
-				Trips: []models.TripStr{
-					models.TripStr{
+			json.DumpToWriter(ri.ResponsStr{
+				Trips: []ri.TripStr{
+					ri.TripStr{
 						Legs: legs,
 						Costs: c,
 					},

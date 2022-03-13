@@ -38,6 +38,8 @@ github.com/takoyaki-3/go-gtfs v1.1.28 h1:cDLarLstwdGhjrBQoyRElA6zMyppExl113Gp00F
 github.com/takoyaki-3/go-gtfs v1.1.28/go.mod h1:CnvJfGGYUYiXnOr36VIdiH4csupP1rKZoMgsCvSB/Lk=
 github.com/takoyaki-3/go-gtfs v1.1.30 h1:xAw4dtAADrBU8inL6Tc5ZCZFgNHk92GDcarSmec3AKU=
 github.com/takoyaki-3/go-gtfs v1.1.30/go.mod h1:jS3jMvtbN3wPwroswOH+Ld1DQJqlR0OmpRNUkwSqK38=
+github.com/takoyaki-3/go-gtfs v1.1.33 h1:zhO3T4dyER2Yg4K30DmULLhbel/u1fHPS7jQrEp1yIk=
+github.com/takoyaki-3/go-gtfs v1.1.33/go.mod h1:jS3jMvtbN3wPwroswOH+Ld1DQJqlR0OmpRNUkwSqK38=
 github.com/takoyaki-3/go-gtfs-fare v0.0.0 h1:v2YtCxg1A7CnuCXE/L8cAHCewfGy71xpq6jcifKXE9g=
 github.com/takoyaki-3/go-gtfs-fare v0.0.0/go.mod h1:GCcqAMIrJ5NXTuBh2ZiFQot783zs5qw5DPfRuzPcYsc=
 github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb h1:+ho64ruBJraFsn8q8UL6jPhPRQRHrLMikXmcxQ4vszQ=
