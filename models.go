@@ -1,8 +1,8 @@
 package mapraptor
 
 import (
-	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	fare "github.com/takoyaki-3/go-gtfs-fare"
+	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 )
 
 type RAPTORData struct {
@@ -11,7 +11,7 @@ type RAPTORData struct {
 	StopId2Index            map[string]int
 	TripId2Index            map[string]int
 	TripId2StopPatternIndex map[string]int
-	Fare										*fare.GtfsFareData
+	Fare                    *fare.GtfsFareData
 }
 
 type TimeTable struct {

@@ -12,11 +12,11 @@ import (
 	"github.com/MaaSTechJapan/raptor/loader"
 	"github.com/MaaSTechJapan/raptor/routing"
 	. "github.com/takoyaki-3/go-geojson"
+	fare "github.com/takoyaki-3/go-gtfs-fare"
 	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	json "github.com/takoyaki-3/go-json"
-	fare "github.com/takoyaki-3/go-gtfs-fare"
-	ri "github.com/takoyaki-3/go-routing-interface"
 	gm "github.com/takoyaki-3/go-map/v2"
+	ri "github.com/takoyaki-3/go-routing-interface"
 )
 
 func main() {
@@ -61,24 +61,17 @@ func main() {
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
 
-				latlons := [][]float64{}
-
 				for _, v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes {
 					if v.StopID == bef.BeforeStop {
 						on = true
 					}
 					if on {
 						stopId := v.StopID
-						s := g.Stops[raptorData.StopId2Index[stopId]]
 						viaNodes = append(viaNodes, ri.StopTimeStr{
 							StopID:        string(stopId),
-							StopLat:       s.Latitude,
-							StopLon:       s.Longitude,
-							StopName:      s.Name,
 							ArrivalTime:   v.Arrival,
 							DepartureTime: v.Departure,
 						})
-						latlons = append(latlons, []float64{s.Longitude, s.Latitude})
 					}
 					if v.StopID == now {
 						break
@@ -86,47 +79,46 @@ func main() {
 				}
 
 				// trip情報の取得
-				trip := g.GetTrip(string(memo.Tau[ro][now].BeforeEdge))
-				route := g.GetRoute(trip.RouteID)
+				trip := g.GetTrip(tripId)
 				if len(viaNodes) > 0 {
 
 					from := viaNodes[0]
 					to := viaNodes[len(viaNodes)-1]
-					p,err := fare.GetFareAttribute(raptorData.Fare,from.StopID,to.StopID,trip.RouteID)
+					p, err := fare.GetFareAttribute(raptorData.Fare, from.StopID, to.StopID, trip.RouteID)
 					if err != nil {
 						p = fare.FareAttribute{
 							Price: -1,
 						}
 					}
-					cost := ri.NewCostStr()
-					*cost.Fare = p.Price
-					*cost.Distance = -1
-					*cost.Time = float64(gtfs.HHMMSS2Sec(to.ArrivalTime) - gtfs.HHMMSS2Sec(from.DepartureTime))
-					*cost.Transfer = 0
-					*cost.Walk = 0
+					if false {
+						fmt.Println(p)
+					}
 
 					legs = append([]ri.LegStr{ri.LegStr{
-						Type: "bus",
-						Trip: trip,
-						Route: route,
+						Trip:      trip,
 						StopTimes: viaNodes,
-						Geometry:  NewLineString(latlons, nil),
-						Costs: cost,
-					}},legs...)
+					}}, legs...)
 				}
 				ro = ro - 1
 			}
 
+			// 追加情報の設定
+			for i, _ := range legs {
+				if err := legs[i].AddProperty(g); err != nil {
+					log.Fatalln(err)
+				}
+			}
+
 			// コストの合計
 			c := ri.NewCostStr()
-			for _,leg := range legs{
-				c = ri.CostAdder(c,leg.Costs)
+			for _, leg := range legs {
+				c = ri.CostAdder(c, leg.Costs)
 			}
 
 			json.DumpToWriter(ri.ResponsStr{
 				Trips: []ri.TripStr{
 					ri.TripStr{
-						Legs: legs,
+						Legs:  legs,
 						Costs: c,
 					},
 				},
@@ -201,15 +193,15 @@ type QueryNodeStr struct {
 	Time   *int     `json:"time"`
 }
 type QueryLimit struct {
-	Time     int      `json:"time"`
-	Transfer int      `json:"transfer"`
+	Time     int `json:"time"`
+	Transfer int `json:"transfer"`
 }
 type QueryStr struct {
-	Origin        QueryNodeStr  `json:"origin"`
-	Destination   QueryNodeStr  `json:"destination"`
-	Limit         QueryLimit    `json:"limit"`
-	WalkSpeed     float64       `json:"walk_speed"`
-	Property      QueryProperty `json:"properties"`
+	Origin      QueryNodeStr  `json:"origin"`
+	Destination QueryNodeStr  `json:"destination"`
+	Limit       QueryLimit    `json:"limit"`
+	WalkSpeed   float64       `json:"walk_speed"`
+	Property    QueryProperty `json:"properties"`
 }
 type QueryProperty struct {
 	Timetable string `json:"timetable"`

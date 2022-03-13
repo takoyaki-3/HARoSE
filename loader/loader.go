@@ -4,10 +4,10 @@ import (
 	"time"
 
 	. "github.com/MaaSTechJapan/raptor"
+	fare "github.com/takoyaki-3/go-gtfs-fare"
 	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	json "github.com/takoyaki-3/go-json"
 	gm "github.com/takoyaki-3/go-map/v2"
-	fare "github.com/takoyaki-3/go-gtfs-fare"
 )
 
 type ConfMap struct {
@@ -55,7 +55,7 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 				// 地図データ読み込み
 				road, err := gm.LoadOSM(conf.Map.FileName)
 				if err != nil {
-					return &RAPTORData{},&gtfs.GTFS{},err
+					return &RAPTORData{}, &gtfs.GTFS{}, err
 				}
 				// 緯度経度で切り取り
 				if conf.Map.MaxLat == 0 {
@@ -142,10 +142,9 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 			raptorData.StopId2Index[stop.ID] = i
 		}
 
-		
 		// 運賃情報の読み込み
-		raptorData.Fare,err = fare.LoadGTFS(conf.GTFS.Path)
-		
+		raptorData.Fare, err = fare.LoadGTFS(conf.GTFS.Path)
+
 		return raptorData, g, err
 	}
 }

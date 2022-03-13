@@ -9,7 +9,7 @@ require (
 	github.com/takoyaki-3/go-gtfs/v2 v2.0.1
 	github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb
 	github.com/takoyaki-3/go-map/v2 v2.0.2
-	github.com/takoyaki-3/go-routing-interface v0.0.1
+	github.com/takoyaki-3/go-routing-interface v0.0.2
 	google.golang.org/protobuf v1.27.1 // indirect
 )
 
@@ -17,5 +17,4 @@ require (
 // replace github.com/takoyaki-3/go-csv-tag => C:\Users\hatano.yuuta\Documents\go-csv-tag
 // replace github.com/takoyaki-3/go-map => C:\Users\hatano.yuuta\Documents\go-map
 // replace github.com/takoyaki-3/go-gtfs/v2 => C:\Users\hatano.yuuta\Documents\go-gtfs
-
 // replace github.com/takoyaki-3/go-routing-interface => C:\Users\hatano.yuuta\Documents\go-routing-interface
