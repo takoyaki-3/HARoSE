@@ -31,6 +31,8 @@ func main() {
 		bytes, _ := ioutil.ReadFile("./index.html")
 		fmt.Fprintln(w, string(bytes))
 	})
+
+	// routing
 	http.HandleFunc("/v1/json/routing", func(w http.ResponseWriter, r *http.Request) {
 
 		// Query
@@ -80,19 +82,6 @@ func main() {
 				// trip情報の取得
 				trip := raptorData.GTFS.GetTrip(tripId)
 				if len(viaNodes) > 0 {
-
-					from := viaNodes[0]
-					to := viaNodes[len(viaNodes)-1]
-					p, err := raptorData.GTFS.GetFareAttributeFromOD(from.StopID, to.StopID, trip.RouteID)
-					if err != nil {
-						p = gtfs.FareAttribute{
-							Price: -1,
-						}
-					}
-					if false {
-						fmt.Println(p)
-					}
-
 					legs = append([]ri.LegStr{ri.LegStr{
 						Trip:      trip,
 						StopTimes: viaNodes,
