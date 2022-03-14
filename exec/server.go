@@ -83,7 +83,7 @@ func main() {
 						StopTimes: viaNodes,
 					}
 					leg.Trip.ID = tripId
-					legs = append(legs, leg)
+					legs = append([]ri.LegStr{leg}, legs...)
 				}
 				ro = ro - 1
 			}
