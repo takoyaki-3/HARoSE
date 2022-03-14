@@ -8,7 +8,7 @@ require (
 	github.com/takoyaki-3/go-gtfs/v2 v2.0.4
 	github.com/takoyaki-3/go-json v0.0.0-20211221023225-18c8e7ac7ccb
 	github.com/takoyaki-3/go-map/v2 v2.0.3
-	github.com/takoyaki-3/go-routing-interface v0.0.6
+	github.com/takoyaki-3/go-routing-interface v0.0.7
 	google.golang.org/protobuf v1.27.1 // indirect
 )
 

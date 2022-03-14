@@ -55,9 +55,6 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 			for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
 				for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
 					riding := false
-					// sort.Slice(trip.StopTimes,func(i, j int) bool {
-					// 	return trip.StopTimes[i].Departure < trip.StopTimes[j].Departure
-					// })
 					if gtfs.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime {
 						continue
 					}

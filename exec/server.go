@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
 	"strconv"
 
@@ -14,7 +13,6 @@ import (
 	. "github.com/takoyaki-3/go-geojson"
 	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	json "github.com/takoyaki-3/go-json"
-	gm "github.com/takoyaki-3/go-map/v2"
 	ri "github.com/takoyaki-3/go-routing-interface"
 )
 
@@ -79,36 +77,25 @@ func main() {
 					}
 				}
 
-				// trip情報の取得
-				trip := raptorData.GTFS.GetTrip(tripId)
+				// Legの追加
 				if len(viaNodes) > 0 {
-					legs = append([]ri.LegStr{ri.LegStr{
-						Trip:      trip,
+					leg := ri.LegStr{
 						StopTimes: viaNodes,
-					}}, legs...)
+					}
+					leg.Trip.ID = tripId
+					legs = append(legs, leg)
 				}
 				ro = ro - 1
 			}
 
-			// 追加情報の設定
-			for i, _ := range legs {
-				if err := legs[i].AddProperty(raptorData.GTFS); err != nil {
-					log.Fatalln(err)
-				}
+			trip := ri.TripStr{
+				Legs: legs,
 			}
-
-			// コストの合計
-			c := ri.NewCostStr()
-			for _, leg := range legs {
-				c = ri.CostAdder(c, leg.Costs)
-			}
+			trip.AddProperty(raptorData.GTFS)
 
 			json.DumpToWriter(ri.ResponsStr{
 				Trips: []ri.TripStr{
-					ri.TripStr{
-						Legs:  legs,
-						Costs: c,
-					},
+					trip,
 				},
 			}, w)
 		}
@@ -152,49 +139,6 @@ func main() {
 	}
 }
 
-func FindODNode(qns QueryNodeStr, g *gtfs.GTFS) string {
-	stopId := ""
-	minD := math.MaxFloat64
-	if qns.StopId == nil {
-		for _, stop := range g.Stops {
-			d := gm.HubenyDistance(gm.Node{
-				Lat: stop.Latitude,
-				Lon: stop.Longitude},
-				gm.Node{
-					Lat: *qns.Lat,
-					Lon: *qns.Lon})
-			if d < minD {
-				stopId = stop.ID
-				minD = d
-			}
-		}
-	} else {
-		stopId = *qns.StopId
-	}
-	return stopId
-}
-
-type QueryNodeStr struct {
-	StopId *string  `json:"stop_id"`
-	Lat    *float64 `json:"lat"`
-	Lon    *float64 `json:"lon"`
-	Time   *int     `json:"time"`
-}
-type QueryLimit struct {
-	Time     int `json:"time"`
-	Transfer int `json:"transfer"`
-}
-type QueryStr struct {
-	Origin      QueryNodeStr  `json:"origin"`
-	Destination QueryNodeStr  `json:"destination"`
-	Limit       QueryLimit    `json:"limit"`
-	WalkSpeed   float64       `json:"walk_speed"`
-	Property    QueryProperty `json:"properties"`
-}
-type QueryProperty struct {
-	Timetable string `json:"timetable"`
-}
-
 func GetRequestData(r *http.Request, queryStr interface{}) error {
 	v := r.URL.Query()
 	if v == nil {
@@ -203,7 +147,7 @@ func GetRequestData(r *http.Request, queryStr interface{}) error {
 	return json.LoadFromString(v["json"][0], &queryStr)
 }
 func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
-	var query QueryStr
+	var query ri.QueryStr
 	if err := GetRequestData(r, &query); err != nil {
 		return &routing.Query{}, err
 	}
@@ -213,17 +157,17 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 	if query.Limit.Transfer == 0 {
 		query.Limit.Transfer = 15
 	}
-	if query.WalkSpeed == 0 {
-		query.WalkSpeed = 80
+	if query.Properties.WalkingSpeed == 0 {
+		query.Properties.WalkingSpeed = 80
 	}
 
 	return &routing.Query{
-		ToStop:      FindODNode(query.Destination, g),
-		FromStop:    FindODNode(query.Origin, g),
+		ToStop:      ri.FindNearestNode(query.Destination, g),
+		FromStop:    ri.FindNearestNode(query.Origin, g),
 		FromTime:    *query.Origin.Time,
-		MinuteSpeed: query.WalkSpeed,
+		MinuteSpeed: query.Properties.WalkingSpeed,
 		Round:       query.Limit.Transfer,
 		LimitTime:   *query.Origin.Time + query.Limit.Time,
-		Date:        query.Property.Timetable,
+		Date:        query.Properties.Timetable,
 	}, nil
 }

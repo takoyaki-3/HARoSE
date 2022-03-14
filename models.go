@@ -10,7 +10,7 @@ type RAPTORData struct {
 	StopId2Index            map[string]int
 	TripId2Index            map[string]int
 	TripId2StopPatternIndex map[string]int
-	GTFS 										*gtfs.GTFS
+	GTFS                    *gtfs.GTFS
 }
 
 type TimeTable struct {
