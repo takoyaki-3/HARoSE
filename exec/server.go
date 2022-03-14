@@ -12,7 +12,6 @@ import (
 	"github.com/MaaSTechJapan/raptor/loader"
 	"github.com/MaaSTechJapan/raptor/routing"
 	. "github.com/takoyaki-3/go-geojson"
-	fare "github.com/takoyaki-3/go-gtfs-fare"
 	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	json "github.com/takoyaki-3/go-json"
 	gm "github.com/takoyaki-3/go-map/v2"
@@ -22,7 +21,7 @@ import (
 func main() {
 
 	// RAPTOR用データの読み込み
-	raptorData, g, err := loader.LoadGTFS()
+	raptorData, err := loader.LoadGTFS()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -35,7 +34,7 @@ func main() {
 	http.HandleFunc("/v1/json/routing", func(w http.ResponseWriter, r *http.Request) {
 
 		// Query
-		if q, err := GetQuery(r, g); err != nil {
+		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
 			log.Fatalln(err)
 		} else {
 			memo := routing.RAPTOR(raptorData, q)
@@ -79,14 +78,14 @@ func main() {
 				}
 
 				// trip情報の取得
-				trip := g.GetTrip(tripId)
+				trip := raptorData.GTFS.GetTrip(tripId)
 				if len(viaNodes) > 0 {
 
 					from := viaNodes[0]
 					to := viaNodes[len(viaNodes)-1]
-					p, err := fare.GetFareAttribute(raptorData.Fare, from.StopID, to.StopID, trip.RouteID)
+					p, err := raptorData.GTFS.GetFareAttributeFromOD(from.StopID, to.StopID, trip.RouteID)
 					if err != nil {
-						p = fare.FareAttribute{
+						p = gtfs.FareAttribute{
 							Price: -1,
 						}
 					}
@@ -104,7 +103,7 @@ func main() {
 
 			// 追加情報の設定
 			for i, _ := range legs {
-				if err := legs[i].AddProperty(g); err != nil {
+				if err := legs[i].AddProperty(raptorData.GTFS); err != nil {
 					log.Fatalln(err)
 				}
 			}
@@ -127,11 +126,11 @@ func main() {
 	})
 	http.HandleFunc("/routing_surface", func(w http.ResponseWriter, r *http.Request) {
 
-		if q, err := GetQuery(r, g); err != nil {
+		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
 			log.Fatalln(err)
 		} else {
 			StopId2Index := map[string]int{}
-			for i, stop := range g.Stops {
+			for i, stop := range raptorData.GTFS.Stops {
 				StopId2Index[stop.ID] = i
 			}
 
@@ -143,13 +142,13 @@ func main() {
 					props := map[string]string{}
 					props["stop_id"] = k
 					props["arrival_time"] = gtfs.Sec2HHMMSS(v.ArrivalTime)
-					props["stop_name"] = g.Stops[StopId2Index[k]].Name
+					props["stop_name"] = raptorData.GTFS.Stops[StopId2Index[k]].Name
 					props["round"] = strconv.Itoa(r)
 					fc.Features = append(fc.Features, Feature{
 						Type: "Feature",
 						Geometry: Geometry{
 							Type:        "Point",
-							Coordinates: []float64{g.Stops[StopId2Index[k]].Longitude, g.Stops[StopId2Index[k]].Latitude},
+							Coordinates: []float64{raptorData.GTFS.Stops[StopId2Index[k]].Longitude, raptorData.GTFS.Stops[StopId2Index[k]].Latitude},
 						},
 						Properties: props,
 					})
