@@ -3,8 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/takoyaki-3/go-gtfs"
-	"github.com/takoyaki-3/go-gtfs/tool"
+	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	json "github.com/takoyaki-3/go-json"
 )
 
@@ -33,7 +32,7 @@ func main() {
 	if g, err := gtfs.Load(conf.GTFS.Path, nil); err != nil {
 		log.Fatalln(err)
 	} else {
-		tool.MakeTransferWithOSM(g, conf.ConnectRange, conf.WalkingSpeed, conf.Map.FileName, conf.NumThread)
+		g.AddTransferWithOSM(conf.ConnectRange, conf.WalkingSpeed, conf.Map.FileName, conf.NumThread)
 		if err := gtfs.Dump(g, conf.GTFS.Path, nil); err != nil {
 			log.Fatalln(err)
 		}

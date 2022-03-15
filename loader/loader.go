@@ -4,12 +4,9 @@ import (
 	"time"
 
 	. "github.com/MaaSTechJapan/raptor"
-	"github.com/takoyaki-3/go-gtfs"
-	"github.com/takoyaki-3/go-gtfs/stop_pattern"
-	"github.com/takoyaki-3/go-gtfs/tool"
+	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 	json "github.com/takoyaki-3/go-json"
-	gm "github.com/takoyaki-3/go-map"
-	fare "github.com/takoyaki-3/go-gtfs-fare"
+	gm "github.com/takoyaki-3/go-map/v2"
 )
 
 type ConfMap struct {
@@ -35,7 +32,7 @@ type Conf struct {
 	IsUseGTFSTransfer bool     `json:"is_use_GTFS_transfer"`
 }
 
-func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
+func LoadGTFS() (*RAPTORData, error) {
 
 	raptorData := new(RAPTORData)
 	raptorData.Transfer = map[string]map[string]float64{}
@@ -46,18 +43,18 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 
 	var conf Conf
 	if err := json.LoadFromPath("./conf.json", &conf); err != nil {
-		return &RAPTORData{}, &gtfs.GTFS{}, err
+		return &RAPTORData{}, err
 	}
 
 	if g, err := gtfs.Load(conf.GTFS.Path, nil); err != nil {
-		return &RAPTORData{}, &gtfs.GTFS{}, err
+		return &RAPTORData{}, err
 	} else {
 		if !conf.IsUseGTFSTransfer {
 			if conf.Map.FileName != "" {
 				// 地図データ読み込み
 				road, err := gm.LoadOSM(conf.Map.FileName)
 				if err != nil {
-					return &RAPTORData{},&gtfs.GTFS{},err
+					return &RAPTORData{}, err
 				}
 				// 緯度経度で切り取り
 				if conf.Map.MaxLat == 0 {
@@ -88,9 +85,9 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 					Lat: conf.Map.MinLat,
 					Lon: conf.Map.MaxLon,
 				}); err != nil {
-					return &RAPTORData{}, &gtfs.GTFS{}, err
+					return &RAPTORData{}, err
 				}
-				tool.MakeTransfer(g, conf.ConnectRange, conf.WalkingSpeed, road, conf.NumThread)
+				g.AddTransfer(conf.ConnectRange, conf.WalkingSpeed, road, conf.NumThread)
 			}
 		}
 
@@ -106,14 +103,14 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 		}
 
 		if date, err := time.Parse("20060102", conf.StartDate); err != nil {
-			return &RAPTORData{}, &gtfs.GTFS{}, err
+			return &RAPTORData{}, err
 		} else {
 			for {
 				// 日付をベースとした絞り込み
-				dateG := tool.ExtractByDate(g, date)
+				dateG := g.ExtractByDate(date)
 
 				// 停車パターンの取得
-				routePatterns := stoppattern.GetRoutePatterns(dateG)
+				routePatterns := dateG.GetRoutePatterns()
 
 				// 駅ごとの停車する路線リスト
 				stopRoutes := map[string][]int{}
@@ -143,11 +140,8 @@ func LoadGTFS() (*RAPTORData, *gtfs.GTFS, error) {
 		for i, stop := range g.Stops {
 			raptorData.StopId2Index[stop.ID] = i
 		}
+		raptorData.GTFS = g
 
-		
-		// 運賃情報の読み込み
-		raptorData.Fare,err = fare.LoadGTFS(conf.GTFS.Path)
-		
-		return raptorData, g, err
+		return raptorData, err
 	}
 }
