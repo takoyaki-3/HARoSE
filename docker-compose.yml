@@ -9,4 +9,12 @@ services:
     volumes:
       - ./:/worker
     working_dir: /worker/exec
-    command: go run server.go
+    command: go run .
+
+  converter:
+    image: golang:1.15
+    container_name: converter
+    volumes:
+      - ./:/worker
+    working_dir: /worker/exec/converter
+    command: go run .

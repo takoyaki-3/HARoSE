@@ -1,0 +1,419 @@
+openapi: 3.1.0
+info:
+  title: 経路探索エンジン
+  version: '1.0'
+  summary: GTFSに基づく経路探索エンジン。
+  description: |
+    GTFS及びOpen Street Mapに基づく経路探索エンジン。
+
+    ## 事前準備
+
+    経路探索APIを利用するにあたり、事前にデータの変換が必要となる。
+    データを変換するにあたり、``original_data``フォルダに次のような設定ファイルを作成のうえ、配置する。
+
+    ```json
+    {
+      "start_date":"20220215",
+      "end_date":"20220215",
+      "connect_range":500,
+      "GTFS":{
+        "path":"GTFS"
+      },
+      "map":{
+        "file_name":"chugoku-latest.osm.pbf",
+        "max_lat":180,
+        "max_lon":180,
+        "min_lat":0,
+        "min_lon":0
+      },
+      "is_use_GTFS_transfer":true,
+      "num_threads":10,
+      "walking_speed":80
+    }
+    ```
+
+    それぞれの設定事項は、以下の通りである。
+
+    |変数名|設定内容|暫定値|単位|
+    |---|---|---|---|
+    |start_date|メモリ上に読み込む時刻表の開始日|指定必須|日付|
+    |end_date|メモリ上に読み込む時刻表の終了日|指定必須|日付|
+    |connect_range|接続する停留所間の最大距離|100|メートル|
+    |GTFS.path|展開したGTFSが配置されているディレクトリ（.zipで終わる場合は展開されてないGTFSとして認識し、自動で展開される）|なし|文字列|
+    |map.file_name|Open Street Mapのファイル名|なし|文字列|
+    |map.max_lat|道路網の利用する最大緯度|90|度|
+    |map.max_lon|道路網の利用する最大経度|180|度|
+    |map.min_lat|道路網の利用する最小緯度|-90|度|
+    |map.min_lon|道路網の利用する最小経度|-180|度|
+    |is_use_GTFS_transfer|GTFSのTransferにより停留所間を接続するか否か|false|真偽値|
+    |walking_speed|Transferを作る上での歩行速度|80|メートル毎分|
+    |num_threads|データ読み込み時に使用するスレッド数|1|個|
+
+    また、``original_data``フォルダに設定ファイルに記載したファイル名でGTFSとOpen Street Mapのデータを配置する。
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /v1/json/search:
+    parameters: []
+    get:
+      operationId: search.takoyaki3.com
+      summary: 経路検索
+      tags: []
+      description: ' 公共交通機関及び道路網を使った経路検索を行う'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                origin:
+                  type: object
+                  description: 出発地点の指定
+                  properties:
+                    stop_id:
+                      type: string
+                      description: 緯度と経度で指定する場合は不要
+                    lat:
+                      type: number
+                      description: stop_idで指定する場合は不要
+                    lon:
+                      type: number
+                      description: stop_idで指定する場合は不要
+                    time:
+                      description: 0時0分からの経過秒。到着時間指定で検索する際は不要
+                      type: integer
+                destination:
+                  type: object
+                  description: 到着地点の指定
+                  required:
+                    - stop_id
+                  properties:
+                    stop_id:
+                      type: string
+                      description: 緯度と経度で指定する場合は不要
+                    lat:
+                      type: number
+                      description: stop_idで指定する場合は不要
+                    lon:
+                      type: number
+                      description: stop_idで指定する場合は不要
+                    time:
+                      description: 0時0分からの経過秒。出発時刻で検索する場合は不要
+                      type: integer
+                properties:
+                  type: object
+                  description: 経路探索する上での追加で必要な情報
+                  required:
+                    - timetable
+                  properties:
+                    walking_speed:
+                      type: integer
+                      description: 歩行速度（分速）
+                    timetable:
+                      type: string
+                      description: 経路探索を行う日付。YYYYMMDD
+                cost_weight:
+                  type: object
+                  description: 経路探索において各基準をどの程度考慮するかの設定
+                  properties:
+                    time:
+                      type: number
+                      description: 所要時間（秒）
+                    walk:
+                      type: number
+                      description: 歩行時間（秒）
+                    transfer:
+                      type: number
+                      description: 乗換回数
+                    distance:
+                      type: number
+                      description: 距離（メートル）
+              required:
+                - origin
+                - destination
+                - properties
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trips:
+                    type: array
+                    description: 旅程の候補
+                    items:
+                      type: object
+                      properties:
+                        legs:
+                          type: array
+                          description: 旅程における１行程
+                          items:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                                description: 'Legの種類（ex. bus,walk,train,wait）'
+                              trip:
+                                $ref: '#/components/schemas/Trip'
+                              route:
+                                $ref: '#/components/schemas/Route'
+                              stop_times:
+                                type: array
+                                description: Legにおける停車時間等
+                                items:
+                                  type: object
+                                  properties:
+                                    stop_id:
+                                      type: string
+                                      description: 基データGTFSにおけるstop_id
+                                    zone_id:
+                                      type: string
+                                      description: 基データGTFSにおけるzone_id
+                                    stop_lat:
+                                      type: number
+                                      description: 停留所の緯度
+                                    stop_lon:
+                                      type: number
+                                      description: 停留所の経度
+                                    stop_name:
+                                      type: string
+                                      description: 停留所名
+                                    arrival_time:
+                                      type: string
+                                      description: '停留所到着時刻。HH:MM:SS形式'
+                                    departure_time:
+                                      type: string
+                                      description: '停留所出発時刻。HH:MM:SS形式'
+                                  required:
+                                    - stop_id
+                                    - stop_lat
+                                    - stop_lon
+                                    - stop_name
+                                    - arrival_time
+                                    - departure_time
+                              geometry:
+                                $ref: '#/components/schemas/Geometry'
+                              properties:
+                                type: object
+                                description: Legの概要
+                                required:
+                                  - arrival_time
+                                  - departure_time
+                                properties:
+                                  arrival_time:
+                                    type: string
+                                    description: Legにおける到着時刻
+                                  departure_time:
+                                    type: string
+                                    description: Legにおける出発時刻
+                              cost:
+                                $ref: '#/components/schemas/Cost'
+                            required:
+                              - type
+                              - properties
+                              - cost
+                        properties:
+                          type: object
+                          description: 行程の概要
+                          required:
+                            - total_time
+                            - arrival_time
+                            - departure_time
+                          properties:
+                            total_time:
+                              type: integer
+                              description: 所要時間（秒）
+                            arrival_time:
+                              type: string
+                              description: '到着時刻 HH:MM:SS'
+                            departure_time:
+                              type: string
+                              description: 'HH:MM:SS'
+                        costs:
+                          $ref: '#/components/schemas/Cost'
+                      required:
+                        - legs
+                        - properties
+                        - costs
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  meta:
+                    type: object
+                    required:
+                      - engine_version
+                    properties:
+                      engine_version:
+                        type: string
+                        description: 検索エンジンのバージョン
+                required:
+                  - meta
+components:
+  schemas:
+    Geometry:
+      title: Geometry
+      type: object
+      description: 可視化に必要な地理情報
+      properties:
+        type:
+          type: string
+          description: LineStringやPointといった地理情報名
+        coordinates:
+          type: array
+          description: |-
+            線形情報の場合：[[経度,緯度]]
+            地点情報の場合：[経度,緯度]
+          items:
+            type: array
+            items:
+              type: number
+        properties:
+          type: object
+          properties:
+            key:
+              type: string
+              description: keyには任意のkeyが入る
+      required:
+        - type
+        - coordinates
+    Trip:
+      title: Trip
+      type: object
+      properties:
+        route_id:
+          type: string
+        service_id:
+          type: string
+        trip_id:
+          type: string
+        trip_headsign:
+          type: string
+        trip_short_name:
+          type: string
+        direction_id:
+          type: string
+        block_id:
+          type: string
+        shape_id:
+          type: string
+        wheelchair_accessible:
+          type: string
+        bikes_allowed:
+          type: string
+    Route:
+      title: Route
+      type: object
+      properties:
+        route_id:
+          type: string
+        agency_id:
+          type: string
+        route_short_name:
+          type: string
+        route_long_name:
+          type: string
+        route_desc:
+          type: string
+        route_type:
+          type: string
+        route_url:
+          type: string
+        route_color:
+          type: string
+        route_text_color:
+          type: string
+        route_sort_order:
+          type: integer
+        continuous_pickup:
+          type: integer
+        continuous_drop_off:
+          type: integer
+      required:
+        - route_id
+        - route_type
+    Cost:
+      title: Cost
+      type: object
+      properties:
+        time:
+          type: number
+        walk:
+          type: number
+        transfer:
+          type: number
+        distance:
+          type: number
+        fare:
+          type: number
+      description: LegやTrip（行程）におけるコスト
+    Stop:
+      title: Stop
+      type: object
+      properties:
+        stop_id:
+          type: string
+          description: 基データGTFSにおけるstop_id
+        stop_code:
+          type: string
+          description: 旅客案内用の停留所番号
+        stop_name:
+          type: string
+          description: 停留所名
+        stop_desc:
+          type: string
+          description: 停留所の説明
+        stop_lat:
+          type: string
+          description: 停留所の緯度
+        stop_lon:
+          type: string
+          description: 停留所の経度
+        zone_id:
+          type: string
+          description: 停留所の運賃区間
+        stop_url:
+          type: string
+          description: 停留所のWebページ
+        location_type:
+          type: integer
+          description: |-
+            停留所のタイプ
+            0: 標柱やプラットフォーム
+            1: 駅
+            2: 出入口
+            3: 汎用ノード
+            4: 乗車エリア
+        parent_station:
+          type: string
+          description: 駅など上位階層に存在する停留所
+        stop_timezone:
+          type: string
+          description: 停留所のタイムゾーン
+        wheelchair_boarding:
+          type: integer
+          description: |-
+            車いす対応状況
+
+            親となる駅がない場合
+            0: バリアフリー情報なし
+            1: 一部の車両には車いす利用者が乗車可能
+            2: 車いすでの乗車不可能
+
+            親となる駅がある場合
+            0: 親を継承
+            1: 駅の外から特定のプラットフォームを結ぶバリアフリー通路あり
+            2: 駅の外から特定のプラットフォームを結ぶバリアフリー通路なし
+
+            駅の出入口
+            0: 親を継承
+            1: 駅の入り口は車いすでアクセス可能
+            2: 駅の入り口からプラットフォームを結ぶバリアフリー通路なし
+        level_id:
+          type: string
+        platform_code:
+          type: string
+      required:
+        - stop_id

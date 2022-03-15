@@ -46,7 +46,7 @@ RAPTORアルゴリズムによりバス停間の時刻を考慮した２地点�
 |start_date|メモリ上に読み込む時刻表の開始日|指定必須|日付|
 |end_date|メモリ上に読み込む時刻表の終了日|指定必須|日付|
 |connect_range|接続する停留所間の最大距離|100|メートル|
-|GTFS.path|展開したGTFSが配置されているディレクトリ（.zipで終わる場合は展開されてないGTFSとして認識し、自動で展開される）|なし|文字列|
+|GTFS.path|展開したGTFSが配置されているディレクトリ（.zipで終わる場合は展開されてないGTFSとして認識し、自動で展開されるが、is_use_GTFS_transferがfalseの場合は展開したフォルダのみに対応）|なし|文字列|
 |map.file_name|Open Street Mapのファイル名|なし|文字列|
 |map.max_lat|道路網の利用する最大緯度|90|度|
 |map.max_lon|道路網の利用する最大経度|180|度|
@@ -71,7 +71,7 @@ $ go run addTransfer.go
 APIサーバーを起動する。
 
 ```
-$ go run .\server.go
+$ go run .
 ```
 
 又は
@@ -109,8 +109,6 @@ http://localhost:8000/routing?json={"origin":{"lat":34.37692415452747,"lon":132.
 |limit.transfer|経路探索する上での最大許容乗車回数|5|回|
 |property.walk_speed|歩行速度|80|メートル毎秒|
 |property.timetable|経路探索する時刻表（日付）|必須|
-<!-- |destination.time|0:00を基準とした到着時刻|必須|秒| -->
-
 
 ## 到達圏検索
 
@@ -138,57 +136,3 @@ http://localhost:8000/routing_surface?json={"origin":{"time":28800,"lat":34.3829
 表示されたGeoJSONを右クリックで保存し、[kepler.gl](https://kepler.gl/demo)にドラックアンドドロップすると可視化される。
 
 ![](./images/routing_surface.png)
-
-
-
-### レスポンス
-
-```
-[]trips                 # 旅程
-  []legs                # １乗車
-    type                # Leg種類 (wait, walk, bus)
-    vechicle            # 乗り物情報
-      trip_id           # GTFSに準じる
-      trip_description  # GTFSに準じる
-      route_long_name   # GTFSに準じる
-      service_id        # GTFSに準じる
-      trip_type         # GTFSに準じる
-      route_color       # GTFSに準じる
-      route_text_color  # GTFSに準じる
-      route_short_name  # GTFSに準じる
-      trip_headsign     # GTFSに準じる
-      route_id          # GTFSに準じる  
-    []stop_times        # GTFSに準じる
-      stop_id           # GTFSに準じる
-      zone_id           # GTFSに準じる
-      stop_lat          # GTFSに準じる
-      stop_lon          # GTFSに準じる
-      stop_name         # GTFSに準じる
-      arrival_time      # GTFSに準じる
-      departure_time    # GTFSに準じる
-      pickup_type       # GTFSに準じる
-      drop_off_type     # GTFSに準じる
-      stop_sequence     # GTFSに準じる
-    []time_edges        # 混雑集約などに用いる時空間グラフにおける辺
-    geometry            # 地理情報
-      type              # GeoJSONに準じる
-      []coordinates     # GeoJSONに準じる
-    cost                # Legのコスト
-      time              # 所要時間
-      walk              # 歩行距離
-      transfer          # 乗車回数
-      distance          # 距離
-      fare              # 運賃
-    properties          # プロパティ
-      arrival_time      # 到着時刻
-      departure_time    # 出発時刻
-  cost                  # Tripのコスト
-    time                # 所要時間
-    walk                # 歩行距離
-    transfer            # 乗車回数
-    distance            # 移動距離
-    fare                # 運賃
-  properties            # プロパティ
-    arrival_time        # 到着時刻
-    departure_time      # 出発時刻
-```
