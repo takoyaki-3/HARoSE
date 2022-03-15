@@ -12,21 +12,32 @@ RAPTORアルゴリズムによりバス停間の時刻を考慮した２地点�
 
 ## APIサーバ起動方法
 
-1 . ``/GTFS``に展開したGTFSのテキストファイルを配置。
+1 . GTFSを配置。
 
 2 . 停留所間の距離を直線距離でなく道のりにする場合、OpenStreetMapの地図データを配置。
 
-3 . 設定ファイルを作成し、``conf.json``というファイル名で配置
+3 . 以下のような設定ファイルを作成し、``conf.json``というファイル名で配置
 
 #### conf.json
 
 ```json
 {
-  "start_date":"20210215",
-  "end_date":"20210215",
-  "connect_range":100,
-  "map":"chugoku-latest.osm.pbf",
-  "num_threads":10
+  "start_date":"20220215",
+  "end_date":"20220215",
+  "connect_range":500,
+  "GTFS":{
+    "path":"GTFS"
+  },
+  "map":{
+    "file_name":"chugoku-latest.osm.pbf",
+    "max_lat":180,
+    "max_lon":180,
+    "min_lat":0,
+    "min_lon":0
+  },
+  "is_use_GTFS_transfer":true,
+  "num_threads":10,
+  "walking_speed":80
 }
 ```
 
@@ -35,6 +46,8 @@ RAPTORアルゴリズムによりバス停間の時刻を考慮した２地点�
 |start_date|メモリ上に読み込む時刻表の開始日|指定必須|日付|
 |end_date|メモリ上に読み込む時刻表の終了日|指定必須|日付|
 |connect_range|接続する停留所間の最大距離|100|メートル|
+|GTFS.path|展開したGTFSが配置されているディレクトリ（.zipで終わる場合は展開されてないGTFSとして認識し、自動で展開される）|なし|文字列|
+|map.file_name|Open Street Mapのファイル名|なし|文字列|
 |map.max_lat|道路網の利用する最大緯度|90|度|
 |map.max_lon|道路網の利用する最大経度|180|度|
 |map.min_lat|道路網の利用する最小緯度|-90|度|
@@ -43,7 +56,19 @@ RAPTORアルゴリズムによりバス停間の時刻を考慮した２地点�
 |walking_speed|Transferを作る上での歩行速度|80|メートル毎分|
 |num_threads|データ読み込み時に使用するスレッド数|1|個|
 
-3 . サーバ起動
+4. 停留所間の接続情報作成
+
+以下のコマンドを実行することで、Open Street Mapに基づいた道のりによる停留所間の接続を作成する。
+作成された停留所間の接続情報は、GTFS内の``transfer.txt``に保存される。既に存在する場合は上書きされるため注意。
+なお、``is_use_GTFS_transfer``が``false``の場合、停留所の緯度経度を基に次に記述するサーバープログラムが接続情報を作成するため、この手順は不要となるが、計算時間の観点から予め接続情報を作ることを推奨する。
+
+```
+$ go run addTransfer.go
+```
+
+5 . サーバ起動
+
+APIサーバーを起動する。
 
 ```
 $ go run .\server.go
