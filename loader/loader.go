@@ -52,7 +52,7 @@ func LoadGTFS() (*RAPTORData, error) {
 		if !conf.IsUseGTFSTransfer {
 			if conf.Map.FileName != "" {
 				// 地図データ読み込み
-				road, err := gm.LoadOSM("./original_data/"+conf.Map.FileName)
+				road, err := gm.LoadOSM("./original_data/" + conf.Map.FileName)
 				if err != nil {
 					return &RAPTORData{}, err
 				}
