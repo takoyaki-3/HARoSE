@@ -9,3 +9,8 @@ mkdocs build
 ```
 mkdocs serve
 ```
+
+```
+npm i -g redoc-cli
+redoc-cli bundle .\openAPI.yml
+```

@@ -50,13 +50,101 @@ info:
     |num_threads|データ読み込み時に使用するスレッド数|1|個|
 
     また、``original_data``フォルダに設定ファイルに記載したファイル名でGTFSとOpen Street Mapのデータを配置する。
+    上述した設定ファイルの例では、次のようなファイル構成となる。
+
+    ```
+    .
+    ├── docker-compose.yml
+    ├── docs
+    ├── exec
+    │   ├── converter
+    │   │   └── addTransfer.go
+    │   ├── index.html
+    │   ├── original_data
+    │   │   ├── ToeiBus-GTFS
+    │   │   │   ├── agency.txt
+    │   │   │   ├── agency_jp.txt
+    │   │   │   ├── attributions.txt
+    │   │   │   ├── calendar.txt
+    │   │   │   ├── calendar_dates.txt
+    │   │   │   ├── fare_attributes.txt
+    │   │   │   ├── fare_rules.txt
+    │   │   │   ├── feed_info.txt
+    │   │   │   ├── office_jp.txt
+    │   │   │   ├── routes.txt
+    │   │   │   ├── shapes.txt
+    │   │   │   ├── stop_times.txt
+    │   │   │   ├── stops.txt
+    │   │   │   ├── transfers.txt
+    │   │   │   ├── translations.txt
+    │   │   │   └── trips.txt
+    │   │   ├── conf.json
+    │   │   ├── kanto-latest.osm.pbf
+    │   │   └── readme.md
+    │   └── server.go
+    ├── go.mod
+    ├── go.sum
+    ├── loader
+    │   └── loader.go
+    ├── models.go
+    ├── readme.md
+    └── routing
+        └── routing.go
+    ```
+
+    ## 変換処理
+
+    #### Golangの場合
+
+    ``exec/converter``ディレクトリ内の``converter.go``を実行する。
+    以下のコマンドで実行できる。
+    ```
+    $ go run converter.go
+    ```
+
+    #### docker-composeの場合
+
+    ```
+    $ docker-compose up .
+    ```
+
+    ## APIサーバーの起動
+    データの変換が完了した後、以下のコマンドでAPIサーバーを起動する。
+
+    #### Golangの場合
+
+    ```
+    $ go run .
+    ```
+
+    #### docker-composeの場合
+
+    ```
+    $ docker-compose up api
+    ```
+
+    ## 動作確認
+
+    ``localhost:8000/index.html``を開き、動作確認を行うことができる。
+    対象となる運行ダイヤがGTFSに含まれること及び設定ファイルに記載されていることを確認する。
+
+
+    ## 補足資料
+
+
+    このAPIは主に以下の３つのパッケージを使用しており，それぞれの役割は以下の通りである。
+    |パッケージ|役割|
+    |---|---|
+    |github.com/takoyaki-3/go-gtfs/v2|GTFSの読み込みや運行日による絞り込み|
+    |github.com/takoyaki-3/go-map/v2|道路網などの地理空間情報|
+    |github.com/takoyaki-3/go-routing-interface|API入出力|
 servers:
-  - url: 'http://localhost:3000'
+  - url: 'http://localhost:8000'
 paths:
   /v1/json/search:
     parameters: []
     get:
-      operationId: search.takoyaki3.com
+      operationId: ''
       summary: 経路検索
       tags: []
       description: ' 公共交通機関及び道路網を使った経路検索を行う'
@@ -85,8 +173,6 @@ paths:
                 destination:
                   type: object
                   description: 到着地点の指定
-                  required:
-                    - stop_id
                   properties:
                     stop_id:
                       type: string
@@ -128,10 +214,33 @@ paths:
                     distance:
                       type: number
                       description: 距離（メートル）
+                limit:
+                  type: object
+                  properties:
+                    '':
+                      type: string
               required:
                 - origin
                 - destination
                 - properties
+            examples:
+              葛西臨海公園付近からお台場海浜公園付近へ８時出発で経路探索する例（2022年3月15日出発）:
+                value:
+                  origin:
+                    lat: 35.643891
+                    lon: 139.862403
+                    time: 28800
+                  destination:
+                    lat: 35.629583
+                    lon: 139.777906
+                  properties:
+                    walking_speed: 80
+                    timetable: '20220315'
+                  cost_weight:
+                    time: 0
+                    walk: 0
+                    transfer: 0
+                    distance: 0
       responses:
         '200':
           description: OK
@@ -348,7 +457,7 @@ components:
           type: number
         fare:
           type: number
-      description: LegやTrip（行程）におけるコスト
+      description: LegやTrip（旅程）におけるコスト
     Stop:
       title: Stop
       type: object
