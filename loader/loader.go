@@ -133,6 +133,7 @@ func LoadGTFS() (*RAPTORData, error) {
 				if dateStr == conf.EndDate {
 					break
 				}
+				date = date.AddDate(0,0,1)
 			}
 		}
 
