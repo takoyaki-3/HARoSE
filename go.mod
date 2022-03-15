@@ -19,3 +19,9 @@ require (
 // replace github.com/takoyaki-3/go-routing-interface => C:\Users\hatano.yuuta\Documents\go-routing-interface
 
 // replace github.com/takoyaki-3/go-gtfs/v2 => C:\Users\hatan\Documents\go-gtfs
+
+// replace github.com/takoyaki-3/go-geojson => ./modules/go-geojson
+// replace github.com/takoyaki-3/go-csv-tag => ./modules/go-csv-tag
+// replace github.com/takoyaki-3/go-map => ./modules/go-map
+// replace github.com/takoyaki-3/go-gtfs/v2 => ./modules/go-gtfs
+// replace github.com/takoyaki-3/go-routing-interface => ./modules/go-routing-interface
