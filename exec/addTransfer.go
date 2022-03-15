@@ -25,15 +25,15 @@ type Conf struct {
 func main() {
 
 	var conf Conf
-	if err := json.LoadFromPath("./conf.json", &conf); err != nil {
+	if err := json.LoadFromPath("./original_data/conf.json", &conf); err != nil {
 		log.Fatalln(err)
 	}
 
-	if g, err := gtfs.Load(conf.GTFS.Path, nil); err != nil {
+	if g, err := gtfs.Load("./original_data/"+conf.GTFS.Path, nil); err != nil {
 		log.Fatalln(err)
 	} else {
-		g.AddTransferWithOSM(conf.ConnectRange, conf.WalkingSpeed, conf.Map.FileName, conf.NumThread)
-		if err := gtfs.Dump(g, conf.GTFS.Path, nil); err != nil {
+		g.AddTransferWithOSM(conf.ConnectRange, conf.WalkingSpeed, "./original_data/"+conf.Map.FileName, conf.NumThread)
+		if err := gtfs.Dump(g, "./original_data/"+conf.GTFS.Path, nil); err != nil {
 			log.Fatalln(err)
 		}
 	}

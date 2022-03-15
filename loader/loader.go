@@ -42,17 +42,17 @@ func LoadGTFS() (*RAPTORData, error) {
 	raptorData.TripId2StopPatternIndex = map[string]int{}
 
 	var conf Conf
-	if err := json.LoadFromPath("./conf.json", &conf); err != nil {
+	if err := json.LoadFromPath("./original_data/conf.json", &conf); err != nil {
 		return &RAPTORData{}, err
 	}
 
-	if g, err := gtfs.Load(conf.GTFS.Path, nil); err != nil {
+	if g, err := gtfs.Load("./original_data/"+conf.GTFS.Path, nil); err != nil {
 		return &RAPTORData{}, err
 	} else {
 		if !conf.IsUseGTFSTransfer {
 			if conf.Map.FileName != "" {
 				// 地図データ読み込み
-				road, err := gm.LoadOSM(conf.Map.FileName)
+				road, err := gm.LoadOSM("./original_data/"+conf.Map.FileName)
 				if err != nil {
 					return &RAPTORData{}, err
 				}
