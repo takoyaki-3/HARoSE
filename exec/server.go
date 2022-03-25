@@ -37,17 +37,18 @@ func main() {
 		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
 			log.Fatalln(err)
 		} else {
-			memo := routing.RAPTOR(raptorData, q)
+			memo := routing.RAPTORr(raptorData, q)
 
-			pos := q.ToStop
+			pos := q.FromStop
 			ro := q.Round - 1
 
 			legs := []ri.LegStr{}
 
-			for pos != q.FromStop {
+			for pos != q.ToStop {
 				bef := memo.Tau[ro][pos]
 				now := pos
-				if bef.ArrivalTime == 0 {
+				fmt.Println("bef",bef)
+				if bef.DepartureTime == 0 {
 					fmt.Println("not found !")
 					break
 				}
@@ -59,6 +60,8 @@ func main() {
 				tripId := string(memo.Tau[ro][now].BeforeEdge)
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
+
+				fmt.Println("a",tripId,routePattern,tripIndex)
 
 				for _, v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes {
 					if v.StopID == bef.BeforeStop {
@@ -83,7 +86,7 @@ func main() {
 						StopTimes: viaNodes,
 					}
 					leg.Trip.ID = tripId
-					legs = append([]ri.LegStr{leg}, legs...)
+					legs = append(legs,leg)
 				}
 				ro = ro - 1
 			}
@@ -91,6 +94,7 @@ func main() {
 			trip := ri.TripStr{
 				Legs: legs,
 			}
+			fmt.Println(trip)
 			trip.AddProperty(raptorData.GTFS)
 
 			json.DumpToWriter(ri.ResponsStr{
