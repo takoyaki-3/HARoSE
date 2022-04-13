@@ -25,7 +25,7 @@ type NodeMemo struct {
 
 type Memo struct {
 	Tau    []map[string]NodeMemo // ラウンドごとの各停留所への最も早い到着時刻
-	Marked []string
+	Marked []string              // memoの中でなくてよいのでは？
 }
 
 func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
@@ -77,46 +77,63 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		memo.Marked = nil
 
 		// step-2 路線ごとにscanし、tauを更新
-		for _, fromStopId := range memo.Marked {
-			for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
-				for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
-					riding := false
-					if gtfs.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime {
-						continue
-					}
-					for _, stopTime := range trip.StopTimes {
-						if riding {
-							isUpdate := false
-							if v, ok := memo.Tau[r][stopTime.StopID]; ok {
-								if gtfs.HHMMSS2Sec(stopTime.Arrival) < v.ArrivalTime {
+		for routeIndex, fromStopId := range Q {
+			stopPattern := data.TimeTables[query.Date].StopPatterns[routeIndex]
+
+			// 当該路線で最初にcatchできる便
+			currentTrip := -1 // int型
+			for i, trip := range stopPattern.Trips {
+				if memo.Tau[r-1][fromStopId].ArrivalTime <= gtfs.HHMMSS2Sec(trip.StopTimes[i].Departure) {
+					currentTrip = i
+					break
+				}
+			}
+
+			// 当該路線のうちfromStop以降の停留所をscan
+			// for
+		}
+		/*
+			for _, fromStopId := range memo.Marked {
+				for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
+					for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
+						riding := false
+						if gtfs.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime {
+							continue
+						}
+						for _, stopTime := range trip.StopTimes {
+							if riding {
+								isUpdate := false
+								if v, ok := memo.Tau[r][stopTime.StopID]; ok {
+									if gtfs.HHMMSS2Sec(stopTime.Arrival) < v.ArrivalTime {
+										isUpdate = true
+									}
+								} else {
 									isUpdate = true
 								}
+								if isUpdate {
+									memo.Tau[r][stopTime.StopID] = NodeMemo{
+										ArrivalTime: gtfs.HHMMSS2Sec(stopTime.Arrival),
+										BeforeStop:  fromStopId,
+										BeforeEdge:  trip.Properties.TripID,
+									}
+									newMarked[stopTime.StopID] = true
+								}
 							} else {
-								isUpdate = true
-							}
-							if isUpdate {
-								memo.Tau[r][stopTime.StopID] = NodeMemo{
-									ArrivalTime: gtfs.HHMMSS2Sec(stopTime.Arrival),
-									BeforeStop:  fromStopId,
-									BeforeEdge:  trip.Properties.TripID,
+								if stopTime.StopID == fromStopId {
+									if gtfs.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r][fromStopId].ArrivalTime {
+										break
+									}
+									riding = true
 								}
-								newMarked[stopTime.StopID] = true
-							}
-						} else {
-							if stopTime.StopID == fromStopId {
-								if gtfs.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r][fromStopId].ArrivalTime {
-									break
-								}
-								riding = true
 							}
 						}
-					}
-					if riding {
-						break
+						if riding {
+							break
+						}
 					}
 				}
 			}
-		}
+		*/
 
 		// 乗換
 		// memo.Marked周りを修正する
