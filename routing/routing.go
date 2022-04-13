@@ -51,6 +51,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		newMarked := map[string]bool{}
 
 		// Tau
+		// memo.Marked 周りを修正する
 		for _, fromStopId := range memo.Marked {
 			for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
 				for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
@@ -98,6 +99,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				continue
 			}
 			for toStopId, v := range data.Transfer[fromStopId] {
+				// ここも直す
 				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v/query.MinuteSpeed*60)
 				isUpdate := false
 				if m, ok := memo.Tau[r][toStopId]; ok {
@@ -125,6 +127,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 			}
 		}
 
+		// ここはおかしい
 		for k, _ := range newMarked {
 			memo.Marked = append(memo.Marked, k)
 		}
