@@ -24,7 +24,7 @@ type NodeMemo struct {
 }
 
 type Memo struct {
-	Tau    []map[string]NodeMemo
+	Tau    []map[string]NodeMemo // ラウンドごとの各停留所への最も早い到着時刻
 	Marked []string
 }
 
@@ -57,6 +57,20 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		for stopId, n := range memo.Tau[r-1] {
 			memo.Tau[r][stopId] = n
 		}
+
+		// scan対象の路線：前のラウンドでmarkされた停留所を経由する路線
+		Q := map[int]string{}
+		for _, stopId := range memo.Marked {
+			for _, routeIndex := range data.TimeTables[query.Date].StopRoutes[stopId] {
+				// 各路線で、最も始点側でmarkされた停留所を紐づける
+				if _, ok := Q[routeIndex]; ok {
+					Q[routeIndex] = stopId // stopIdがその経路の最も始点側かどうかcheck
+				} else {
+					Q[routeIndex] = stopId
+				}
+			}
+		}
+		memo.Marked = nil
 
 		// step-2 路線ごとにscanし、tauを更新
 		for _, fromStopId := range memo.Marked {
