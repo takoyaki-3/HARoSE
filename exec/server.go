@@ -39,11 +39,13 @@ func main() {
 		} else {
 			memo := routing.RAPTOR(raptorData, q)
 
+			// 計算結果から出力する経路を構成
 			pos := q.ToStop
 			ro := q.Round - 1
 
 			legs := []ri.LegStr{}
 
+			// 最も到着時刻が早いが最も乗換の多い経路1本を出力
 			for pos != q.FromStop {
 				bef := memo.Tau[ro][pos]
 				now := pos
@@ -100,6 +102,8 @@ func main() {
 			}, w)
 		}
 	})
+
+	// 単一出発点・単一出発時刻に対する到達圏を検索
 	http.HandleFunc("/routing_surface", func(w http.ResponseWriter, r *http.Request) {
 
 		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
@@ -133,6 +137,7 @@ func main() {
 			json.DumpToWriter(fc, w)
 		}
 	})
+
 	fmt.Println("start server.")
 	if err := http.ListenAndServe("0.0.0.0:8000", nil); err != nil {
 		log.Fatalln(err)
@@ -158,11 +163,11 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 		query.Limit.Transfer = 15
 	}
 	if query.Properties.WalkingSpeed == 0 {
-		query.Properties.WalkingSpeed = 80
+		query.Properties.WalkingSpeed = 80 // 単位:[m/分]
 	}
 
 	return &routing.Query{
-		ToStop:      ri.FindNearestNode(query.Destination, g),
+		ToStop:      ri.FindNearestNode(query.Destination, g), // 指定した緯度経度から最も近い停留所
 		FromStop:    ri.FindNearestNode(query.Origin, g),
 		FromTime:    *query.Origin.Time,
 		MinuteSpeed: query.Properties.WalkingSpeed,
