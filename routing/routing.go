@@ -63,13 +63,17 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		for _, stopId := range memo.Marked {
 			for _, routeIndex := range data.TimeTables[query.Date].StopRoutes[stopId] {
 				// 各路線で、最も始点側でmarkされた停留所を紐づける
-				if _, ok := Q[routeIndex]; ok {
-					Q[routeIndex] = stopId // stopIdがその経路の最も始点側かどうかcheck
+				if anotherStop, ok := Q[routeIndex]; ok {
+					// stopIdがその経路の最も始点側なら更新
+					if data.RouteStop2StopSeq[routeIndex][stopId] < data.RouteStop2StopSeq[routeIndex][anotherStop] {
+						Q[routeIndex] = stopId
+					}
 				} else {
 					Q[routeIndex] = stopId
 				}
 			}
 		}
+		// marked stopをいったん削除
 		memo.Marked = nil
 
 		// step-2 路線ごとにscanし、tauを更新
