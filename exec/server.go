@@ -37,13 +37,16 @@ func main() {
 		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
 			log.Fatalln(err)
 		} else {
+			// RAPTOR
 			memo := routing.RAPTOR(raptorData, q)
 
+			// 出力する検索結果を構成
 			pos := q.ToStop
 			ro := q.Round - 1
 
 			legs := []ri.LegStr{}
 
+			// 最も到着時刻が早く乗換回数が多い経路1本を出力
 			for pos != q.FromStop {
 				bef := memo.Tau[ro][pos]
 				now := pos
@@ -60,6 +63,7 @@ func main() {
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
 
+				// 乗車した便が経由する停留所の情報をlegに追加
 				for _, v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes {
 					if v.StopID == bef.BeforeStop {
 						on = true
@@ -77,7 +81,7 @@ func main() {
 					}
 				}
 
-				// Legの追加
+				// Legを経路に追加
 				if len(viaNodes) > 0 {
 					leg := ri.LegStr{
 						StopTimes: viaNodes,
@@ -91,8 +95,10 @@ func main() {
 			trip := ri.TripStr{
 				Legs: legs,
 			}
+			// 各便の属性（系統名、停留所名など）を追加
 			trip.AddProperty(raptorData.GTFS)
 
+			// jsonで出力
 			json.DumpToWriter(ri.ResponsStr{
 				Trips: []ri.TripStr{
 					trip,
@@ -100,6 +106,8 @@ func main() {
 			}, w)
 		}
 	})
+
+	// 単一出発地・単一出発時刻に対する到達圏検索
 	http.HandleFunc("/routing_surface", func(w http.ResponseWriter, r *http.Request) {
 
 		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
@@ -155,14 +163,14 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 		query.Limit.Time = 3600 * 10
 	}
 	if query.Limit.Transfer == 0 {
-		query.Limit.Transfer = 15
+		query.Limit.Transfer = 15 // 最大ラウンド数
 	}
 	if query.Properties.WalkingSpeed == 0 {
-		query.Properties.WalkingSpeed = 80
+		query.Properties.WalkingSpeed = 80 // 単位:[m/分]
 	}
 
 	return &routing.Query{
-		ToStop:      ri.FindNearestNode(query.Destination, g),
+		ToStop:      ri.FindNearestNode(query.Destination, g), // 指定した緯度経度から最も近い停留所
 		FromStop:    ri.FindNearestNode(query.Origin, g),
 		FromTime:    *query.Origin.Time,
 		MinuteSpeed: query.Properties.WalkingSpeed,

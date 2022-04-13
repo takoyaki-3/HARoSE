@@ -34,12 +34,14 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	fromStop := query.FromStop
 	fromTime := query.FromTime
 
+	// 初期化
 	memo.Tau = make([]map[string]NodeMemo, query.Round)
 	for k, _ := range memo.Tau {
 		memo.Tau[k] = map[string]NodeMemo{}
 	}
 	memo.Marked = []string{}
 
+	// 出発停留所
 	memo.Tau[0][fromStop] = NodeMemo{
 		ArrivalTime: fromTime,
 		BeforeStop:  "init",
@@ -51,6 +53,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		newMarked := map[string]bool{}
 
 		// Tau
+		// 路線ごとにscan
 		for _, fromStopId := range memo.Marked {
 			for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
 				for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
@@ -93,6 +96,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		}
 
 		// 乗換
+		// memo.Marked周りを修正する
 		for _, fromStopId := range memo.Marked {
 			if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
 				continue
@@ -118,13 +122,14 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 			}
 		}
 
-		// そのまま待機
+		// ここは違う
 		if r != query.Round-1 {
 			for stopId, n := range memo.Tau[r] {
 				memo.Tau[r+1][stopId] = n
 			}
 		}
 
+		// ここも違う
 		for k, _ := range newMarked {
 			memo.Marked = append(memo.Marked, k)
 		}
