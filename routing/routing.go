@@ -49,11 +49,16 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	}
 	memo.Marked = append(memo.Marked, fromStop)
 
-	for r := 0; r < query.Round-1; r++ {
+	for r := 1; r <= query.Round; r++ {
 		newMarked := map[string]bool{}
 
-		// Tau
-		// 路線ごとにscan
+		// step-1 前のラウンドからコピー
+		// local pruning時は不要
+		for stopId, n := range memo.Tau[r-1] {
+			memo.Tau[r][stopId] = n
+		}
+
+		// step-2 路線ごとにscanし、tauを更新
 		for _, fromStopId := range memo.Marked {
 			for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
 				for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
@@ -119,13 +124,6 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 					}
 					newMarked[toStopId] = true
 				}
-			}
-		}
-
-		// ここは違う
-		if r != query.Round-1 {
-			for stopId, n := range memo.Tau[r] {
-				memo.Tau[r+1][stopId] = n
 			}
 		}
 

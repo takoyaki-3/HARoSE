@@ -154,6 +154,7 @@ func GetRequestData(r *http.Request, queryStr interface{}) error {
 	}
 	return json.LoadFromString(v["json"][0], &queryStr)
 }
+
 func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 	var query ri.QueryStr
 	if err := GetRequestData(r, &query); err != nil {
