@@ -16,9 +16,11 @@ type Query struct {
 }
 
 type NodeMemo struct {
-	ArrivalTime int
-	BeforeStop  string
-	BeforeEdge  string
+	ArrivalTime  int
+	BoardingTrip string
+	GetonStop    string
+	GetoffStop   string
+	WalkTransfer bool
 }
 
 type Memo struct {
@@ -41,9 +43,11 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 	// 出発停留所
 	memo.Tau[0][fromStop] = NodeMemo{
-		ArrivalTime: fromTime,
-		BeforeStop:  "init",
-		BeforeEdge:  "init",
+		ArrivalTime:  fromTime,
+		BoardingTrip: "init",
+		GetonStop:    fromStop,
+		GetoffStop:   fromStop,
+		WalkTransfer: false,
 	}
 	memo.Marked = append(memo.Marked, fromStop)
 
@@ -100,9 +104,11 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 					}
 					if isUpdate {
 						memo.Tau[r][stopId] = NodeMemo{
-							ArrivalTime: gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival),
-							BeforeStop:  fromStopId,
-							BeforeEdge:  trip.Properties.TripID,
+							ArrivalTime:  gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival),
+							BoardingTrip: trip.Properties.TripID,
+							GetonStop:    fromStopId,
+							GetoffStop:   stopId,
+							WalkTransfer: false,
 						}
 						newMarked = append(newMarked, stopId)
 					}
