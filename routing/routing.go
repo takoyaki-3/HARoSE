@@ -1,8 +1,6 @@
 package routing
 
 import (
-	"sort"
-
 	. "github.com/MaaSTechJapan/raptor"
 	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 )
@@ -73,11 +71,8 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				}
 			}
 		}
-		// marked stopをいったん削除
-		//memo.Marked = nil
 
 		// step-2 路線ごとにscanし、tauを更新
-
 		for routeIndex, fromStopId := range Q {
 			stopPattern := data.TimeTables[query.Date].StopPatterns[routeIndex]
 
@@ -138,54 +133,12 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				}
 			}
 		}
-		/*
-			for _, fromStopId := range memo.Marked {
-				for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
-					for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
-						riding := false
-						if gtfs.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r-1][fromStopId].ArrivalTime {
-							continue
-						}
-						for _, stopTime := range trip.StopTimes {
-							if riding {
-								isUpdate := false
-								if v, ok := memo.Tau[r-1][stopTime.StopID]; ok {
-									if gtfs.HHMMSS2Sec(stopTime.Arrival) < v.ArrivalTime {
-										isUpdate = true
-									}
-								} else {
-									isUpdate = true
-								}
-								if isUpdate {
-									memo.Tau[r][stopTime.StopID] = NodeMemo{
-										ArrivalTime: gtfs.HHMMSS2Sec(stopTime.Arrival),
-										BeforeStop:  fromStopId,
-										BeforeEdge:  trip.Properties.TripID,
-									}
-									newMarked = append(newMarked, stopTime.StopID)
-								}
-							} else {
-								if stopTime.StopID == fromStopId {
-									if gtfs.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r-1][fromStopId].ArrivalTime {
-										break
-									}
-									riding = true
-								}
-							}
-						}
-						if riding {
-							break
-						}
-					}
-				}
-			}
-		*/
 
 		// marked stopを再構成
 		memo.Marked = nil
 		memo.Marked = append(memo.Marked, newMarked...)
 
-		// 乗換
+		// step-3 徒歩乗換の処理
 		for _, fromStopId := range memo.Marked {
 			if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
 				continue
@@ -215,12 +168,13 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		// marked stopを再構成
 		memo.Marked = nil
 		memo.Marked = append(memo.Marked, newMarked...)
-		// marked stopをソート
-		// たぶんいらない
-		sort.Slice(memo.Marked, func(i, j int) bool {
-			return memo.Marked[i] < memo.Marked[j]
-		})
-
+		/*
+			// marked stopをソート
+			// たぶんいらない
+			sort.Slice(memo.Marked, func(i, j int) bool {
+				return memo.Marked[i] < memo.Marked[j]
+			})
+		*/
 	}
 
 	return memo
