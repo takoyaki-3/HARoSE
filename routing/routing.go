@@ -146,10 +146,13 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 		// step-3 徒歩乗換の処理
 		for _, fromStopId := range memo.Marked {
-			if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
-				continue
-			}
+			/*
+				if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
+					continue
+				}
+			*/
 			for toStopId, v := range data.Transfer[fromStopId] {
+				// v: MinTime [単位:秒]
 				//transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v/query.MinuteSpeed*60)
 				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v)
 				isUpdate := false
@@ -162,9 +165,11 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				}
 				if isUpdate {
 					memo.Tau[r][toStopId] = NodeMemo{
-						ArrivalTime: transArrivalTime,
-						BeforeStop:  fromStopId,
-						BeforeEdge:  "transfer",
+						ArrivalTime:  transArrivalTime,
+						BoardingTrip: memo.Tau[r][fromStopId].BoardingTrip,
+						GetonStop:    memo.Tau[r][fromStopId].GetonStop,
+						GetoffStop:   memo.Tau[r][fromStopId].GetoffStop,
+						WalkTransfer: true,
 					}
 					newMarked = append(newMarked, toStopId)
 				}
