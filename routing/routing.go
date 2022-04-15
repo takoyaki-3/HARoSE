@@ -50,7 +50,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	memo.Marked = append(memo.Marked, fromStop)
 
 	for r := 1; r <= query.Round; r++ {
-		newMarked := map[string]bool{}
+		newMarked := []string{}
 
 		// step-1 前のラウンドからコピー
 		// local pruning時は不要
@@ -118,7 +118,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 									BeforeStop:  fromStopId,
 									BeforeEdge:  trip.Properties.TripID,
 								}
-								newMarked[stopTime.StopID] = true
+								newMarked = append(newMarked, stopTime.StopID)
 							}
 						} else {
 							if stopTime.StopID == fromStopId {
@@ -136,8 +136,11 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 			}
 		}
 
+		// marked stopを再構成
+		memo.Marked = nil
+		memo.Marked = append(memo.Marked, newMarked...)
+
 		// 乗換
-		// memo.Marked周りを修正する
 		for _, fromStopId := range memo.Marked {
 			if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
 				continue
@@ -158,18 +161,20 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 						BeforeStop:  fromStopId,
 						BeforeEdge:  "transfer",
 					}
-					newMarked[toStopId] = true
+					newMarked = append(newMarked, toStopId)
 				}
 			}
 		}
 
-		// ここも違う
-		for k, _ := range newMarked {
-			memo.Marked = append(memo.Marked, k)
-		}
+		// marked stopを再構成
+		memo.Marked = nil
+		memo.Marked = append(memo.Marked, newMarked...)
+		// marked stopをソート
+		// たぶんいらない
 		sort.Slice(memo.Marked, func(i, j int) bool {
 			return memo.Marked[i] < memo.Marked[j]
 		})
+
 	}
 
 	return memo
