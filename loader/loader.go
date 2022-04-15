@@ -36,6 +36,7 @@ func LoadGTFS() (*RAPTORData, error) {
 
 	raptorData := new(RAPTORData)
 	raptorData.Transfer = map[string]map[string]float64{}
+	raptorData.RouteStops = [][]string{}
 	raptorData.RouteStop2StopSeq = []map[string]int{}
 	raptorData.TimeTables = map[string]TimeTable{}
 	raptorData.TripId2Index = map[string]int{}
@@ -130,10 +131,13 @@ func LoadGTFS() (*RAPTORData, error) {
 						stopRoutes[stopTime.StopID] = append(stopRoutes[stopTime.StopID], index)
 					}
 					// 各路線ごとに停留所IDから停車順を取得するためのリスト
+					stopPattern := []string{}
 					stopId2Sequence := map[string]int{}
 					for i, stopTime := range trip.StopTimes {
+						stopPattern = append(stopPattern, stopTime.StopID)
 						stopId2Sequence[stopTime.StopID] = i
 					}
+					raptorData.RouteStops = append(raptorData.RouteStops, stopPattern)
 					raptorData.RouteStop2StopSeq = append(raptorData.RouteStop2StopSeq, stopId2Sequence)
 				}
 
