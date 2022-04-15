@@ -90,6 +90,28 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				if i < fromStopIndex {
 					continue
 				}
+
+				// tau更新
+				if currentTrip != -1 {
+					trip := stopPattern.Trips[currentTrip]
+					isUpdate := false
+					if v, ok := memo.Tau[r-1][stopId]; ok {
+						if gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival) < v.ArrivalTime {
+							isUpdate = true
+						}
+					} else {
+						isUpdate = true
+					}
+					if isUpdate {
+						memo.Tau[r][stopId] = NodeMemo{
+							ArrivalTime: gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival),
+							BeforeStop:  fromStopId,
+							BeforeEdge:  trip.Properties.TripID,
+						}
+						newMarked = append(newMarked, stopId)
+					}
+				}
+
 				// current tripの更新
 				if currentTrip == -1 {
 					for t, trip := range stopPattern.Trips {
@@ -107,7 +129,6 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 						}
 					}
 				}
-
 			}
 		}
 		/*
