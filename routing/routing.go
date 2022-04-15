@@ -83,15 +83,32 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 			// 当該路線で最初にcatchできる便
 			currentTrip := -1 // int型
-			for i, trip := range stopPattern.Trips {
-				if memo.Tau[r-1][fromStopId].ArrivalTime <= gtfs.HHMMSS2Sec(trip.StopTimes[i].Departure) {
-					currentTrip = i
-					break
-				}
-			}
 
-			// 当該路線のうちfromStop以降の停留所をscan
-			// for
+			// fromStop以降の停留所を順にたどる
+			fromStopIndex := data.RouteStop2StopSeq[routeIndex][fromStopId]
+			for i, stopId := range data.RouteStops[routeIndex] {
+				if i < fromStopIndex {
+					continue
+				}
+				// current tripの更新
+				if currentTrip == -1 {
+					for t, trip := range stopPattern.Trips {
+						if memo.Tau[r-1][stopId].ArrivalTime <= gtfs.HHMMSS2Sec(trip.StopTimes[i].Departure) {
+							currentTrip = t
+						}
+					}
+				} else {
+					// 1本前の便に乗れるなら、currentTripの値を1減らす
+					for currentTrip > 0 {
+						if memo.Tau[r-1][stopId].ArrivalTime <= gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip-1].StopTimes[i].Departure) {
+							currentTrip -= 1
+						} else {
+							break
+						}
+					}
+				}
+
+			}
 		}
 		/*
 			for _, fromStopId := range memo.Marked {
