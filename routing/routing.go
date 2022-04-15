@@ -99,13 +99,13 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 			for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
 				for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
 					riding := false
-					if gtfs.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime {
+					if gtfs.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r-1][fromStopId].ArrivalTime {
 						continue
 					}
 					for _, stopTime := range trip.StopTimes {
 						if riding {
 							isUpdate := false
-							if v, ok := memo.Tau[r][stopTime.StopID]; ok {
+							if v, ok := memo.Tau[r-1][stopTime.StopID]; ok {
 								if gtfs.HHMMSS2Sec(stopTime.Arrival) < v.ArrivalTime {
 									isUpdate = true
 								}
@@ -122,7 +122,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 							}
 						} else {
 							if stopTime.StopID == fromStopId {
-								if gtfs.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r][fromStopId].ArrivalTime {
+								if gtfs.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r-1][fromStopId].ArrivalTime {
 									break
 								}
 								riding = true
