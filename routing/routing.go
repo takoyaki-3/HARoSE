@@ -146,7 +146,8 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				continue
 			}
 			for toStopId, v := range data.Transfer[fromStopId] {
-				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v/query.MinuteSpeed*60)
+				//transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v/query.MinuteSpeed*60)
+				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v)
 				isUpdate := false
 				if m, ok := memo.Tau[r][toStopId]; ok {
 					if m.ArrivalTime > transArrivalTime {
