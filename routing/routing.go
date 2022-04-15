@@ -83,6 +83,9 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 			// 当該路線で最初にcatchできる便
 			currentTrip := -1 // int型
 
+			// currentTripに乗車する停留所
+			boardingStop := fromStopId
+
 			// fromStop以降の停留所を順にたどる
 			fromStopIndex := data.RouteStop2StopSeq[routeIndex][fromStopId]
 			for i, stopId := range data.RouteStops[routeIndex] {
@@ -106,7 +109,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 						memo.Tau[r][stopId] = NodeMemo{
 							ArrivalTime:  gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival),
 							BoardingTrip: trip.Properties.TripID,
-							GetonStop:    fromStopId,
+							GetonStop:    boardingStop,
 							GetoffStop:   stopId,
 							WalkTransfer: false,
 						}
@@ -132,6 +135,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 						// 1本前の便に乗れるなら、currentTripの値を1減らす
 						if v.ArrivalTime < gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip-1].StopTimes[i].Arrival) {
 							currentTrip -= 1
+							boardingStop = stopId
 						} else {
 							break
 						}
