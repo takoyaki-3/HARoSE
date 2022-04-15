@@ -92,6 +92,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				}
 
 				// tau更新
+				// fromStopにいる場合はskipされる
 				if currentTrip != -1 {
 					trip := stopPattern.Trips[currentTrip]
 					isUpdate := false
@@ -113,16 +114,22 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				}
 
 				// current tripの更新
-				if currentTrip == -1 {
+				if i == fromStopIndex {
+					// fromStopにいる場合、tripを始発側から検索
 					for t, trip := range stopPattern.Trips {
-						if memo.Tau[r-1][stopId].ArrivalTime <= gtfs.HHMMSS2Sec(trip.StopTimes[i].Departure) {
+						if memo.Tau[r-1][fromStopId].ArrivalTime <= gtfs.HHMMSS2Sec(trip.StopTimes[i].Departure) {
 							currentTrip = t
+							break
 						}
 					}
-				} else {
-					// 1本前の便に乗れるなら、currentTripの値を1減らす
+				} else if v, ok := memo.Tau[r-1][stopId]; ok {
+					// current tripの到着より前ラウンドでの到着が早い場合
+					if v.ArrivalTime >= gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip].StopTimes[i].Arrival) {
+						continue
+					}
 					for currentTrip > 0 {
-						if memo.Tau[r-1][stopId].ArrivalTime <= gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip-1].StopTimes[i].Departure) {
+						// 1本前の便に乗れるなら、currentTripの値を1減らす
+						if v.ArrivalTime < gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip-1].StopTimes[i].Arrival) {
 							currentTrip -= 1
 						} else {
 							break
