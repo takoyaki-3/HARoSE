@@ -42,7 +42,7 @@ func main() {
 
 			// 出力する検索結果を構成
 			pos := q.ToStop
-			ro := q.Round - 1
+			ro := q.Round
 
 			legs := []ri.LegStr{}
 
@@ -54,18 +54,23 @@ func main() {
 					fmt.Println("not found !")
 					break
 				}
-				pos = bef.BeforeStop
 
+				// 徒歩乗換
+				if bef.WalkTransfer {
+					now = bef.GetoffStop
+				}
+
+				// r回目の乗車便
+				pos = bef.GetonStop
 				viaNodes := []ri.StopTimeStr{}
 				on := false
-
-				tripId := string(memo.Tau[ro][now].BeforeEdge)
+				tripId := string(bef.BoardingTrip)
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
 
 				// 乗車した便が経由する停留所の情報をlegに追加
 				for _, v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes {
-					if v.StopID == bef.BeforeStop {
+					if v.StopID == pos {
 						on = true
 					}
 					if on {

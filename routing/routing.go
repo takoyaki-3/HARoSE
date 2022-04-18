@@ -20,7 +20,7 @@ type NodeMemo struct {
 	BoardingTrip string
 	GetonStop    string
 	GetoffStop   string
-	WalkTransfer bool
+	WalkTransfer bool // r回目の乗車後に徒歩移動をする or not
 }
 
 type Memo struct {
