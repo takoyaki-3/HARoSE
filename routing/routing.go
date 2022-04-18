@@ -52,6 +52,17 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	}
 	memo.Marked = append(memo.Marked, fromStop)
 
+	// 近くの停留所への徒歩接続
+	for toStopId, v := range data.Transfer[fromStop] {
+		memo.Tau[0][toStopId] = NodeMemo{
+			ArrivalTime:  fromTime + int(v),
+			BoardingTrip: "init",
+			GetonStop:    fromStop,
+			GetoffStop:   fromStop,
+			WalkTransfer: true,
+		}
+	}
+
 	for r := 1; r <= query.Round; r++ {
 		newMarked := []string{}
 		//fmt.Println("round", r)
