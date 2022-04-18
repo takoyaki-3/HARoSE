@@ -35,7 +35,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	fromTime := query.FromTime
 
 	// 初期化
-	memo.Tau = make([]map[string]NodeMemo, query.Round)
+	memo.Tau = make([]map[string]NodeMemo, query.Round+1)
 	for k, _ := range memo.Tau {
 		memo.Tau[k] = map[string]NodeMemo{}
 	}
