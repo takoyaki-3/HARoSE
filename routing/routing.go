@@ -99,7 +99,6 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				continue
 			}
 			for toStopId, minTransferTime := range data.Transfer[fromStopId] {
-				// ここも直す
 				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(minTransferTime)
 				isUpdate := false
 				if m, ok := memo.Tau[r][toStopId]; ok {
