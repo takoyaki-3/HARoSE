@@ -12,11 +12,11 @@ RAPTORアルゴリズムによりバス停間の時刻を考慮した２地点�
 
 ## APIサーバ起動方法
 
-1 . GTFSを配置。
+1. GTFSを配置。
 
-2 . 停留所間の距離を直線距離でなく道のりにする場合、OpenStreetMapの地図データを配置。
+2. 停留所間の距離を直線距離でなく道のりにする場合、OpenStreetMapの地図データを配置。
 
-3 . 以下のような設定ファイルを作成し、``conf.json``というファイル名で配置
+3. 以下のような設定ファイルを作成し、``conf.json``というファイル名で配置
 
 #### conf.json
 
@@ -68,7 +68,7 @@ $ cd exec/converter  // ディレクトリを移動してから実行する
 $ go run addTransfer.go
 ```
 
-5 . サーバ起動
+5. サーバ起動
 
 APIサーバーを起動する。
 
@@ -87,7 +87,10 @@ $ docker-compose up -d
 
 [http://localhost:8000/](http://localhost:8000/) にアクセスし、適当な2点をクリックすると経路が検索される。
 
-![](./images/start2end.gif)
+(2022/6/10追記)
+入力画面にて、「ダイヤ」欄に入力されている日付が、デフォルトでは`GTFS/calendar.txt`や`conf.json`の日付範囲外になっている可能性があるので要確認。範囲外の日付で検索しても経路は見つからない。
+
+![](docs/docs/images/start2end.gif)
 
 ## 地点間経路検索
 
