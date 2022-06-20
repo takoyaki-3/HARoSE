@@ -42,7 +42,7 @@ func main() {
 
 			// 計算結果から出力する経路を構成
 			pos := q.ToStop
-			ro := q.Round - 1
+			ro := q.Round
 
 			legs := []ri.LegStr{}
 
@@ -54,18 +54,23 @@ func main() {
 					fmt.Println("not found !")
 					break
 				}
-				pos = bef.BeforeStop
 
+				// 徒歩乗換
+				if bef.WalkTransfer {
+					now = bef.GetoffStop
+				}
+
+				// r回目の乗車便
+				pos = bef.GetonStop
 				viaNodes := []ri.StopTimeStr{}
 				on := false
-
-				tripId := string(memo.Tau[ro][now].BeforeEdge)
+				tripId := string(bef.BoardingTrip)
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
 
 				// 乗車した便が経由する停留所の情報をlegに追加
 				for _, v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes {
-					if v.StopID == bef.BeforeStop {
+					if v.StopID == pos {
 						on = true
 					}
 					if on {
@@ -87,7 +92,7 @@ func main() {
 						StopTimes: viaNodes,
 					}
 					leg.Trip.ID = tripId
-					legs = append([]ri.LegStr{leg}, legs...)
+					legs = append([]ri.LegStr{leg}, legs...) // 配列の前に追加
 				}
 				ro = ro - 1
 			}
@@ -95,6 +100,15 @@ func main() {
 			trip := ri.TripStr{
 				Legs: legs,
 			}
+			// console出力
+			for _, leg := range legs {
+				fmt.Println(leg.Trip.ID)
+				for _, stopTime := range leg.StopTimes {
+					fmt.Println(stopTime.StopID, stopTime.ArrivalTime)
+				}
+			}
+			fmt.Println("END")
+
 			// 各便の属性（系統名、停留所名など）を追加
 			trip.AddProperty(raptorData.GTFS)
 

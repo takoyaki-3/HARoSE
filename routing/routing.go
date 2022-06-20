@@ -16,9 +16,11 @@ type Query struct {
 }
 
 type NodeMemo struct {
-	ArrivalTime int
-	BeforeStop  string
-	BeforeEdge  string
+	ArrivalTime  int
+	BoardingTrip string
+	GetonStop    string
+	GetoffStop   string
+	WalkTransfer bool // r回目の乗車後に徒歩移動をする or not
 }
 
 type Memo struct {
@@ -31,9 +33,10 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	// Buffer
 	fromStop := query.FromStop
 	fromTime := query.FromTime
+	//fmt.Println("From:", fromStop, fromTime)
 
 	// 初期化
-	memo.Tau = make([]map[string]NodeMemo, query.Round)
+	memo.Tau = make([]map[string]NodeMemo, query.Round+1)
 	for k, _ := range memo.Tau {
 		memo.Tau[k] = map[string]NodeMemo{}
 	}
@@ -41,20 +44,35 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 	// 出発停留所
 	memo.Tau[0][fromStop] = NodeMemo{
-		ArrivalTime: fromTime,
-		BeforeStop:  "init",
-		BeforeEdge:  "init",
+		ArrivalTime:  fromTime,
+		BoardingTrip: "init",
+		GetonStop:    fromStop,
+		GetoffStop:   fromStop,
+		WalkTransfer: false,
 	}
 	memo.Marked = append(memo.Marked, fromStop)
 
+	// 近くの停留所への徒歩接続
+	for toStopId, v := range data.Transfer[fromStop] {
+		memo.Tau[0][toStopId] = NodeMemo{
+			ArrivalTime:  fromTime + int(v),
+			BoardingTrip: "init",
+			GetonStop:    fromStop,
+			GetoffStop:   fromStop,
+			WalkTransfer: true,
+		}
+	}
+
 	for r := 1; r <= query.Round; r++ {
 		newMarked := []string{}
+		//fmt.Println("round", r)
 
 		// step-1 前のラウンドからコピー
 		// local pruning時は不要
 		for stopId, n := range memo.Tau[r-1] {
 			memo.Tau[r][stopId] = n
 		}
+		//fmt.Println("step 1 is done.")
 
 		// scan対象の路線：前のラウンドでmarkされた停留所を経由する路線
 		Q := map[int]string{}
@@ -71,6 +89,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				}
 			}
 		}
+		//fmt.Println("step 2: routes are accumulated in set Q.")
 
 		// step-2 路線ごとにscanし、tauを更新
 		for routeIndex, fromStopId := range Q {
@@ -79,16 +98,22 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 			// 当該路線で最初にcatchできる便
 			currentTrip := -1 // int型
 
+			// currentTripに乗車する停留所
+			boardingStop := fromStopId
+
 			// fromStop以降の停留所を順にたどる
 			fromStopIndex := data.RouteStop2StopSeq[routeIndex][fromStopId]
+			//fmt.Println(routeIndex, fromStopId, fromStopIndex)
+
 			for i, stopId := range data.RouteStops[routeIndex] {
 				if i < fromStopIndex {
 					continue
 				}
+				//fmt.Println("Stop", stopId, "currentTrip", currentTrip)
 
 				// tau更新
 				// fromStopにいる場合はskipされる
-				if currentTrip != -1 {
+				if currentTrip > 0 && currentTrip < len(stopPattern.Trips) {
 					trip := stopPattern.Trips[currentTrip]
 					isUpdate := false
 					if v, ok := memo.Tau[r-1][stopId]; ok {
@@ -100,9 +125,11 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 					}
 					if isUpdate {
 						memo.Tau[r][stopId] = NodeMemo{
-							ArrivalTime: gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival),
-							BeforeStop:  fromStopId,
-							BeforeEdge:  trip.Properties.TripID,
+							ArrivalTime:  gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival),
+							BoardingTrip: trip.Properties.TripID,
+							GetonStop:    boardingStop,
+							GetoffStop:   stopId,
+							WalkTransfer: false,
 						}
 						newMarked = append(newMarked, stopId)
 					}
@@ -117,15 +144,20 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 							break
 						}
 					}
-				} else if v, ok := memo.Tau[r-1][stopId]; ok {
-					// current tripの到着より前ラウンドでの到着が早い場合
-					if v.ArrivalTime >= gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip].StopTimes[i].Arrival) {
-						continue
+					if currentTrip == -1 {
+						// 存在しなかった場合
+						currentTrip = len(stopPattern.Trips)
 					}
+				} else if v, ok := memo.Tau[r-1][stopId]; ok {
+					/*if v.ArrivalTime >= gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip].StopTimes[i].Arrival) {
+						continue
+					}*/
+					// 前ラウンドでの到着時刻が、current tripでの到着時刻より早い場合
 					for currentTrip > 0 {
 						// 1本前の便に乗れるなら、currentTripの値を1減らす
 						if v.ArrivalTime < gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip-1].StopTimes[i].Arrival) {
 							currentTrip -= 1
+							boardingStop = stopId
 						} else {
 							break
 						}
@@ -138,12 +170,17 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		memo.Marked = nil
 		memo.Marked = append(memo.Marked, newMarked...)
 
+		//fmt.Println("step 2 is done.")
+
 		// step-3 徒歩乗換の処理
 		for _, fromStopId := range memo.Marked {
-			if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
-				continue
-			}
+			/*
+				if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
+					continue
+				}
+			*/
 			for toStopId, v := range data.Transfer[fromStopId] {
+				// v: MinTime [単位:秒]
 				//transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v/query.MinuteSpeed*60)
 				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v)
 				isUpdate := false
@@ -156,9 +193,11 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 				}
 				if isUpdate {
 					memo.Tau[r][toStopId] = NodeMemo{
-						ArrivalTime: transArrivalTime,
-						BeforeStop:  fromStopId,
-						BeforeEdge:  "transfer",
+						ArrivalTime:  transArrivalTime,
+						BoardingTrip: memo.Tau[r][fromStopId].BoardingTrip,
+						GetonStop:    memo.Tau[r][fromStopId].GetonStop,
+						GetoffStop:   memo.Tau[r][fromStopId].GetoffStop,
+						WalkTransfer: true,
 					}
 					newMarked = append(newMarked, toStopId)
 				}
@@ -168,6 +207,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		// marked stopを再構成
 		memo.Marked = nil
 		memo.Marked = append(memo.Marked, newMarked...)
+		//fmt.Println("step 3 is done.")
 		/*
 			// marked stopをソート
 			// たぶんいらない
