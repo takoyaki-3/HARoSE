@@ -92,7 +92,7 @@ func main() {
 						StopTimes: viaNodes,
 					}
 					leg.Trip.ID = tripId
-					legs = append([]ri.LegStr{leg}, legs...)
+					legs = append([]ri.LegStr{leg}, legs...) // 配列の前に追加
 				}
 				ro = ro - 1
 			}
@@ -100,6 +100,15 @@ func main() {
 			trip := ri.TripStr{
 				Legs: legs,
 			}
+			// console出力
+			for _, leg := range legs {
+				fmt.Println(leg.Trip.ID)
+				for _, stopTime := range leg.StopTimes {
+					fmt.Println(stopTime.StopID, stopTime.ArrivalTime)
+				}
+			}
+			fmt.Println("END")
+
 			// 各便の属性（系統名、停留所名など）を追加
 			trip.AddProperty(raptorData.GTFS)
 
