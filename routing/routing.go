@@ -1,8 +1,6 @@
 package routing
 
 import (
-	"sort"
-
 	. "github.com/MaaSTechJapan/raptor"
 	gtfs "github.com/takoyaki-3/go-gtfs/v2"
 )
@@ -24,8 +22,8 @@ type NodeMemo struct {
 }
 
 type Memo struct {
-	Tau    []map[string]NodeMemo
-	Marked []string
+	Tau    []map[string]NodeMemo // ラウンドごとの各停留所への最も早い到着時刻
+	Marked []string              // memoの中でなくてよいのでは？
 }
 
 func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
@@ -34,12 +32,14 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	fromStop := query.FromStop
 	fromTime := query.FromTime
 
+	// 初期化
 	memo.Tau = make([]map[string]NodeMemo, query.Round)
 	for k, _ := range memo.Tau {
 		memo.Tau[k] = map[string]NodeMemo{}
 	}
 	memo.Marked = []string{}
 
+	// 出発停留所
 	memo.Tau[0][fromStop] = NodeMemo{
 		ArrivalTime: fromTime,
 		BeforeStop:  "init",
@@ -47,60 +47,105 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	}
 	memo.Marked = append(memo.Marked, fromStop)
 
-	for r := 0; r < query.Round-1; r++ {
-		newMarked := map[string]bool{}
+	for r := 1; r <= query.Round; r++ {
+		newMarked := []string{}
 
-		// Tau
-		// memo.Marked 周りを修正する
-		for _, fromStopId := range memo.Marked {
-			for _, routePatternId := range data.TimeTables[query.Date].StopRoutes[fromStopId] {
-				for _, trip := range data.TimeTables[query.Date].StopPatterns[routePatternId].Trips {
-					riding := false
-					if gtfs.HHMMSS2Sec(trip.StopTimes[len(trip.StopTimes)-1].Arrival) < memo.Tau[r][fromStopId].ArrivalTime {
-						continue
+		// step-1 前のラウンドからコピー
+		// local pruning時は不要
+		for stopId, n := range memo.Tau[r-1] {
+			memo.Tau[r][stopId] = n
+		}
+
+		// scan対象の路線：前のラウンドでmarkされた停留所を経由する路線
+		Q := map[int]string{}
+		for _, stopId := range memo.Marked {
+			for _, routeIndex := range data.TimeTables[query.Date].StopRoutes[stopId] {
+				// 各路線で、最も始点側でmarkされた停留所を紐づける
+				if anotherStop, ok := Q[routeIndex]; ok {
+					// stopIdがその経路の最も始点側なら更新
+					if data.RouteStop2StopSeq[routeIndex][stopId] < data.RouteStop2StopSeq[routeIndex][anotherStop] {
+						Q[routeIndex] = stopId
 					}
-					for _, stopTime := range trip.StopTimes {
-						if riding {
-							isUpdate := false
-							if v, ok := memo.Tau[r][stopTime.StopID]; ok {
-								if gtfs.HHMMSS2Sec(stopTime.Arrival) < v.ArrivalTime {
-									isUpdate = true
-								}
-							} else {
-								isUpdate = true
-							}
-							if isUpdate {
-								memo.Tau[r][stopTime.StopID] = NodeMemo{
-									ArrivalTime: gtfs.HHMMSS2Sec(stopTime.Arrival),
-									BeforeStop:  fromStopId,
-									BeforeEdge:  trip.Properties.TripID,
-								}
-								newMarked[stopTime.StopID] = true
-							}
-						} else {
-							if stopTime.StopID == fromStopId {
-								if gtfs.HHMMSS2Sec(stopTime.Departure) < memo.Tau[r][fromStopId].ArrivalTime {
-									break
-								}
-								riding = true
-							}
+				} else {
+					Q[routeIndex] = stopId
+				}
+			}
+		}
+
+		// step-2 路線ごとにscanし、tauを更新
+		for routeIndex, fromStopId := range Q {
+			stopPattern := data.TimeTables[query.Date].StopPatterns[routeIndex]
+
+			// 当該路線で最初にcatchできる便
+			currentTrip := -1 // int型
+
+			// fromStop以降の停留所を順にたどる
+			fromStopIndex := data.RouteStop2StopSeq[routeIndex][fromStopId]
+			for i, stopId := range data.RouteStops[routeIndex] {
+				if i < fromStopIndex {
+					continue
+				}
+
+				// tau更新
+				// fromStopにいる場合はskipされる
+				if currentTrip != -1 {
+					trip := stopPattern.Trips[currentTrip]
+					isUpdate := false
+					if v, ok := memo.Tau[r-1][stopId]; ok {
+						if gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival) < v.ArrivalTime {
+							isUpdate = true
+						}
+					} else {
+						isUpdate = true
+					}
+					if isUpdate {
+						memo.Tau[r][stopId] = NodeMemo{
+							ArrivalTime: gtfs.HHMMSS2Sec(trip.StopTimes[i].Arrival),
+							BeforeStop:  fromStopId,
+							BeforeEdge:  trip.Properties.TripID,
+						}
+						newMarked = append(newMarked, stopId)
+					}
+				}
+
+				// current tripの更新
+				if i == fromStopIndex {
+					// fromStopにいる場合、tripを始発側から検索
+					for t, trip := range stopPattern.Trips {
+						if memo.Tau[r-1][fromStopId].ArrivalTime <= gtfs.HHMMSS2Sec(trip.StopTimes[i].Departure) {
+							currentTrip = t
+							break
 						}
 					}
-					if riding {
-						break
+				} else if v, ok := memo.Tau[r-1][stopId]; ok {
+					// current tripの到着より前ラウンドでの到着が早い場合
+					if v.ArrivalTime >= gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip].StopTimes[i].Arrival) {
+						continue
+					}
+					for currentTrip > 0 {
+						// 1本前の便に乗れるなら、currentTripの値を1減らす
+						if v.ArrivalTime < gtfs.HHMMSS2Sec(stopPattern.Trips[currentTrip-1].StopTimes[i].Arrival) {
+							currentTrip -= 1
+						} else {
+							break
+						}
 					}
 				}
 			}
 		}
 
-		// 乗換
+		// marked stopを再構成
+		memo.Marked = nil
+		memo.Marked = append(memo.Marked, newMarked...)
+
+		// step-3 徒歩乗換の処理
 		for _, fromStopId := range memo.Marked {
 			if memo.Tau[r][fromStopId].BeforeEdge == "transfer" {
 				continue
 			}
 			for toStopId, v := range data.Transfer[fromStopId] {
-				// ここも直す
-				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v/query.MinuteSpeed*60)
+				//transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v/query.MinuteSpeed*60)
+				transArrivalTime := memo.Tau[r][fromStopId].ArrivalTime + int(v)
 				isUpdate := false
 				if m, ok := memo.Tau[r][toStopId]; ok {
 					if m.ArrivalTime > transArrivalTime {
@@ -115,25 +160,21 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 						BeforeStop:  fromStopId,
 						BeforeEdge:  "transfer",
 					}
-					newMarked[toStopId] = true
+					newMarked = append(newMarked, toStopId)
 				}
 			}
 		}
 
-		// そのまま待機
-		if r != query.Round-1 {
-			for stopId, n := range memo.Tau[r] {
-				memo.Tau[r+1][stopId] = n
-			}
-		}
-
-		// ここはおかしい
-		for k, _ := range newMarked {
-			memo.Marked = append(memo.Marked, k)
-		}
-		sort.Slice(memo.Marked, func(i, j int) bool {
-			return memo.Marked[i] < memo.Marked[j]
-		})
+		// marked stopを再構成
+		memo.Marked = nil
+		memo.Marked = append(memo.Marked, newMarked...)
+		/*
+			// marked stopをソート
+			// たぶんいらない
+			sort.Slice(memo.Marked, func(i, j int) bool {
+				return memo.Marked[i] < memo.Marked[j]
+			})
+		*/
 	}
 
 	return memo

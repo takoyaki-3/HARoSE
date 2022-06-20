@@ -37,6 +37,7 @@ func main() {
 		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
 			log.Fatalln(err)
 		} else {
+			// RAPTOR
 			memo := routing.RAPTOR(raptorData, q)
 
 			// 計算結果から出力する経路を構成
@@ -62,6 +63,7 @@ func main() {
 				routePattern := raptorData.TripId2StopPatternIndex[tripId]
 				tripIndex := raptorData.TripId2Index[tripId]
 
+				// 乗車した便が経由する停留所の情報をlegに追加
 				for _, v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes {
 					if v.StopID == bef.BeforeStop {
 						on = true
@@ -79,7 +81,7 @@ func main() {
 					}
 				}
 
-				// Legの追加
+				// Legを経路に追加
 				if len(viaNodes) > 0 {
 					leg := ri.LegStr{
 						StopTimes: viaNodes,
@@ -93,8 +95,10 @@ func main() {
 			trip := ri.TripStr{
 				Legs: legs,
 			}
+			// 各便の属性（系統名、停留所名など）を追加
 			trip.AddProperty(raptorData.GTFS)
 
+			// jsonで出力
 			json.DumpToWriter(ri.ResponsStr{
 				Trips: []ri.TripStr{
 					trip,
@@ -151,6 +155,7 @@ func GetRequestData(r *http.Request, queryStr interface{}) error {
 	}
 	return json.LoadFromString(v["json"][0], &queryStr)
 }
+
 func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 	var query ri.QueryStr
 	if err := GetRequestData(r, &query); err != nil {
@@ -160,7 +165,7 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 		query.Limit.Time = 3600 * 10
 	}
 	if query.Limit.Transfer == 0 {
-		query.Limit.Transfer = 15
+		query.Limit.Transfer = 15 // 最大ラウンド数
 	}
 	if query.Properties.WalkingSpeed == 0 {
 		query.Properties.WalkingSpeed = 80 // 単位:[m/分]
