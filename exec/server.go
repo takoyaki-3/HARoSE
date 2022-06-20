@@ -40,13 +40,13 @@ func main() {
 			// RAPTOR
 			memo := routing.RAPTOR(raptorData, q)
 
-			// 出力する検索結果を構成
+			// 計算結果から出力する経路を構成
 			pos := q.ToStop
 			ro := q.Round
 
 			legs := []ri.LegStr{}
 
-			// 最も到着時刻が早く乗換回数が多い経路1本を出力
+			// 最も到着時刻が早いが最も乗換の多い経路1本を出力
 			for pos != q.FromStop {
 				bef := memo.Tau[ro][pos]
 				now := pos
@@ -112,7 +112,7 @@ func main() {
 		}
 	})
 
-	// 単一出発地・単一出発時刻に対する到達圏検索
+	// 単一出発点・単一出発時刻に対する到達圏を検索
 	http.HandleFunc("/routing_surface", func(w http.ResponseWriter, r *http.Request) {
 
 		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
@@ -146,6 +146,7 @@ func main() {
 			json.DumpToWriter(fc, w)
 		}
 	})
+
 	fmt.Println("start server.")
 	if err := http.ListenAndServe("0.0.0.0:8000", nil); err != nil {
 		log.Fatalln(err)
