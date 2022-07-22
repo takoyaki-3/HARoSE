@@ -35,6 +35,9 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 	fromTime := query.FromTime
 	//fmt.Println("From:", fromStop, fromTime)
 
+	// timetable extracted by date
+	timetable := data.TimeTables[query.Date]
+
 	// 初期化
 	memo.Tau = make([]map[string]NodeMemo, query.Round+1)
 	for k, _ := range memo.Tau {
@@ -77,11 +80,11 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 		// scan対象の路線：前のラウンドでmarkされた停留所を経由する路線
 		Q := map[int]string{}
 		for _, stopId := range memo.Marked {
-			for _, routeIndex := range data.TimeTables[query.Date].StopRoutes[stopId] {
+			for _, routeIndex := range timetable.StopRoutes[stopId] {
 				// 各路線で、最も始点側でmarkされた停留所を紐づける
 				if anotherStop, ok := Q[routeIndex]; ok {
 					// stopIdがその経路の最も始点側なら更新
-					if data.RouteStop2StopSeq[routeIndex][stopId] < data.RouteStop2StopSeq[routeIndex][anotherStop] {
+					if timetable.RouteStop2StopSeq[routeIndex][stopId] < timetable.RouteStop2StopSeq[routeIndex][anotherStop] {
 						Q[routeIndex] = stopId
 					}
 				} else {
@@ -93,7 +96,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 		// step-2 路線ごとにscanし、tauを更新
 		for routeIndex, fromStopId := range Q {
-			stopPattern := data.TimeTables[query.Date].StopPatterns[routeIndex]
+			stopPattern := timetable.RoutePatterns[routeIndex]
 
 			// 当該路線で最初にcatchできる便
 			currentTrip := -1 // int型
@@ -102,10 +105,10 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 			boardingStop := fromStopId
 
 			// fromStop以降の停留所を順にたどる
-			fromStopIndex := data.RouteStop2StopSeq[routeIndex][fromStopId]
+			fromStopIndex := timetable.RouteStop2StopSeq[routeIndex][fromStopId]
 			//fmt.Println(routeIndex, fromStopId, fromStopIndex)
 
-			for i, stopId := range data.RouteStops[routeIndex] {
+			for i, stopId := range timetable.RouteStops[routeIndex] {
 				if i < fromStopIndex {
 					continue
 				}
@@ -113,7 +116,7 @@ func RAPTOR(data *RAPTORData, query *Query) (memo Memo) {
 
 				// tau更新
 				// fromStopにいる場合はskipされる
-				if currentTrip > 0 && currentTrip < len(stopPattern.Trips) {
+				if currentTrip >= 0 && currentTrip < len(stopPattern.Trips) {
 					trip := stopPattern.Trips[currentTrip]
 					isUpdate := false
 					if v, ok := memo.Tau[r-1][stopId]; ok {

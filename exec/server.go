@@ -65,11 +65,11 @@ func main() {
 				viaNodes := []ri.StopTimeStr{}
 				on := false
 				tripId := string(bef.BoardingTrip)
-				routePattern := raptorData.TripId2StopPatternIndex[tripId]
-				tripIndex := raptorData.TripId2Index[tripId]
+				routePattern := raptorData.TimeTables[q.Date].TripId2RouteIndex[tripId]
+				tripIndex := raptorData.TimeTables[q.Date].TripId2Index[tripId]
 
 				// 乗車した便が経由する停留所の情報をlegに追加
-				for _, v := range raptorData.TimeTables[q.Date].StopPatterns[routePattern].Trips[tripIndex].StopTimes {
+				for _, v := range raptorData.TimeTables[q.Date].RoutePatterns[routePattern].Trips[tripIndex].StopTimes {
 					if v.StopID == pos {
 						on = true
 					}
