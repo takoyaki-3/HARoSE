@@ -130,6 +130,8 @@ func main() {
 			}
 			fmt.Println("END")
 
+			fmt.Println(json.DumpToString(trips))
+
 			// jsonで出力
 			json.DumpToWriter(ri.ResponsStr{
 				Trips: trips,
