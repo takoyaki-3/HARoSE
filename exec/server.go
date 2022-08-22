@@ -110,7 +110,9 @@ func main() {
 			fmt.Println("END")
 
 			// 各便の属性（系統名、停留所名など）を追加
-			trip.AddProperty(raptorData.GTFS)
+			if len(trip.Legs) > 0 {
+				trip.AddProperty(raptorData.GTFS)
+			}
 
 			// jsonで出力
 			json.DumpToWriter(ri.ResponsStr{
