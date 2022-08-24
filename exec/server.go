@@ -34,7 +34,7 @@ func main() {
 	http.HandleFunc("/v1/json/routing", func(w http.ResponseWriter, r *http.Request) {
 
 		// Query
-		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
+		if q, err := GetRoutingQuery(r, raptorData.GTFS); err != nil {
 			log.Fatalln(err)
 		} else {
 			// RAPTOR
@@ -142,7 +142,7 @@ func main() {
 	// 単一出発点・単一出発時刻に対する到達圏を検索
 	http.HandleFunc("/routing_surface", func(w http.ResponseWriter, r *http.Request) {
 
-		if q, err := GetQuery(r, raptorData.GTFS); err != nil {
+		if q, err := GetIsochroneQuery(r, raptorData.GTFS); err != nil {
 			log.Fatalln(err)
 		} else {
 			StopId2Index := map[string]int{}
@@ -188,7 +188,8 @@ func GetRequestData(r *http.Request, queryStr interface{}) error {
 	return json.LoadFromString(v["json"][0], &queryStr)
 }
 
-func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
+func GetRoutingQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
+	// 地点間検索クエリ
 	var query ri.QueryStr
 	if err := GetRequestData(r, &query); err != nil {
 		return &routing.Query{}, err
@@ -205,6 +206,33 @@ func GetQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
 
 	return &routing.Query{
 		ToStop:      ri.FindNearestNode(query.Destination, g), // 指定した緯度経度から最も近い停留所
+		FromStop:    ri.FindNearestNode(query.Origin, g),
+		FromTime:    *query.Origin.Time,
+		MinuteSpeed: query.Properties.WalkingSpeed,
+		Round:       query.Limit.Transfer,
+		LimitTime:   *query.Origin.Time + query.Limit.Time,
+		Date:        query.Properties.Timetable,
+	}, nil
+}
+
+func GetIsochroneQuery(r *http.Request, g *gtfs.GTFS) (*routing.Query, error) {
+	// 到達圏検索クエリ
+	var query ri.QueryStr
+	if err := GetRequestData(r, &query); err != nil {
+		return &routing.Query{}, err
+	}
+	if query.Limit.Time == 0 {
+		query.Limit.Time = 3600 * 10
+	}
+	if query.Limit.Transfer == 0 {
+		query.Limit.Transfer = 15 // 最大ラウンド数
+	}
+	if query.Properties.WalkingSpeed == 0 {
+		query.Properties.WalkingSpeed = 80 // 単位:[m/分]
+	}
+
+	return &routing.Query{
+		ToStop:      "nil", // 到着ノードは空を指定
 		FromStop:    ri.FindNearestNode(query.Origin, g),
 		FromTime:    *query.Origin.Time,
 		MinuteSpeed: query.Properties.WalkingSpeed,
