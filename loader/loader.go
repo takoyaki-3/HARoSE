@@ -36,10 +36,12 @@ func LoadGTFS() (*RAPTORData, error) {
 
 	raptorData := new(RAPTORData)
 	raptorData.Transfer = map[string]map[string]float64{}
+	//raptorData.RouteStops = [][]string{}
+	//raptorData.RouteStop2StopSeq = []map[string]int{}
 	raptorData.TimeTables = map[string]TimeTable{}
-	raptorData.TripId2Index = map[string]int{}
+	//raptorData.TripId2Index = map[string]int{}
 	raptorData.StopId2Index = map[string]int{}
-	raptorData.TripId2StopPatternIndex = map[string]int{}
+	//raptorData.TripId2StopPatternIndex = map[string]int{}
 
 	var conf Conf
 	if err := json.LoadFromPath("./original_data/conf.json", &conf); err != nil {
@@ -50,6 +52,7 @@ func LoadGTFS() (*RAPTORData, error) {
 		return &RAPTORData{}, err
 	} else {
 		if !conf.IsUseGTFSTransfer {
+			// IsUseGTFSTransferがfalseの場合、transfer.txtをOSMから作成
 			if conf.Map.FileName != "" {
 				// 地図データ読み込み
 				road, err := gm.LoadOSM("./original_data/" + conf.Map.FileName)
@@ -91,6 +94,7 @@ func LoadGTFS() (*RAPTORData, error) {
 			}
 		}
 
+		// transfer
 		for _, v := range g.Transfers {
 			if _, ok := raptorData.Transfer[v.FromStopID]; !ok {
 				raptorData.Transfer[v.FromStopID] = map[string]float64{}
@@ -98,6 +102,7 @@ func LoadGTFS() (*RAPTORData, error) {
 			if _, ok := raptorData.Transfer[v.ToStopID]; !ok {
 				raptorData.Transfer[v.ToStopID] = map[string]float64{}
 			}
+			// 停留所間の徒歩時間[単位:秒]
 			raptorData.Transfer[v.FromStopID][v.ToStopID] = float64(v.MinTime)
 			raptorData.Transfer[v.ToStopID][v.FromStopID] = float64(v.MinTime)
 		}
@@ -109,31 +114,54 @@ func LoadGTFS() (*RAPTORData, error) {
 				// 日付をベースとした絞り込み
 				dateG := g.ExtractByDate(date)
 
-				// 停車パターンの取得
+				// route pattern（停車順がユニークな路線）の取得
 				routePatterns := dateG.GetRoutePatterns()
 
-				// 駅ごとの停車する路線リスト
+				routeStops := [][]string{}
+				routeStop2StopSeq := []map[string]int{}
 				stopRoutes := map[string][]int{}
+				tripId2Index := map[string]int{}
+				tripId2RouteIndex := map[string]int{}
+
 				for index, route := range routePatterns {
 					for i, trip := range route.Trips {
-						raptorData.TripId2Index[trip.Properties.TripID] = i
-						raptorData.TripId2StopPatternIndex[trip.Properties.TripID] = index
+						// tripId -> 同一route内でのtrip sequence
+						tripId2Index[trip.Properties.TripID] = i
+						// tripIdが該当するrouteのindex
+						tripId2RouteIndex[trip.Properties.TripID] = index
 					}
+
 					trip := route.Trips[0]
+					// 停留所ごとの停車する路線リスト
 					for _, stopTime := range trip.StopTimes {
 						stopRoutes[stopTime.StopID] = append(stopRoutes[stopTime.StopID], index)
 					}
+					// 各路線ごとに停留所IDから停車順を取得するためのリスト
+					stopPattern := []string{}
+					stopId2Sequence := map[string]int{}
+					for i, stopTime := range trip.StopTimes {
+						stopPattern = append(stopPattern, stopTime.StopID)
+						stopId2Sequence[stopTime.StopID] = i
+					}
+					// routeが経由するstopIdの順列
+					routeStops = append(routeStops, stopPattern)
+					// (routeIndex, stopId) -> stopSequence
+					routeStop2StopSeq = append(routeStop2StopSeq, stopId2Sequence)
 				}
 
 				dateStr := date.Format("20060102")
 				raptorData.TimeTables[dateStr] = TimeTable{
-					StopPatterns: routePatterns,
-					StopRoutes:   stopRoutes,
+					RoutePatterns:     routePatterns,
+					RouteStops:        routeStops,
+					RouteStop2StopSeq: routeStop2StopSeq,
+					StopRoutes:        stopRoutes,
+					TripId2Index:      tripId2Index,
+					TripId2RouteIndex: tripId2RouteIndex,
 				}
 				if dateStr == conf.EndDate {
 					break
 				}
-				date = date.AddDate(0,0,1)
+				date = date.AddDate(0, 0, 1)
 			}
 		}
 

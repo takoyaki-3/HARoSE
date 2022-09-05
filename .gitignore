@@ -6,3 +6,4 @@ GTFS*
 !.gitignore
 *.txt
 *.json
+*.ipynb
